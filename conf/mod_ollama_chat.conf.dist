@@ -1681,3 +1681,128 @@ OllamaChat.Relationship.MaxLength = 220
 #    OllamaChat.Relationship.PromptTemplate
 #        Placeholder: {relationships}
 # OllamaChat.Relationship.PromptTemplate = " How you feel about people you know:\n{relationships}"
+
+# --------------------------------------------
+# ENVIRONMENTAL/CONTEXTUAL TEMPLATES (continued)
+# --------------------------------------------
+#
+# These have working built-in defaults, but the core logs a "Missing
+# property" warning for every key it cannot find, so they are written out
+# here explicitly. The values below are the module’s own defaults.
+
+# OllamaChat.EnvCommentNearbyPlayer
+#   Description: A pipe-separated (|) list of template messages for when another player is seen nearby.
+#   Placeholders (named): {player_name} {player_race} {player_class} {player_level} {player_state}
+OllamaChat.EnvCommentNearbyPlayer = You notice {player_name}, a {player_race} {player_class}, {player_state} nearby. Say something to or about them.|{player_name} the {player_class} is {player_state} close by. React to seeing them.|A level {player_level} {player_class} called {player_name} is nearby. Comment on them.|You size up {player_name}, a {player_race} {player_class}. Say what you make of them.|{player_name} is {player_state} within earshot. Greet or remark on them.|You spot {player_name} and note they are {player_state}. Say something fitting.
+
+# OllamaChat.EnvCommentGroupMember
+#   Description: A pipe-separated (|) list of template messages for when a party or raid member is worth commenting on.
+#   Placeholders (named): {member_name} {member_class} {member_state}
+OllamaChat.EnvCommentGroupMember = Your companion {member_name} the {member_class} is {member_state}. Say something to them.|{member_name} is {member_state}. Comment on how your group is doing.|You glance at {member_name}, your {member_class}, and remark on the group's state.|Talk to {member_name} about what the group should do next.
+
+# OllamaChat.EnvCommentGuildMemberOnline
+#   Description: A pipe-separated (|) list of template messages for when a guildmate is online.
+#   Placeholders (named): {member_name} {member_class} {member_level}
+OllamaChat.EnvCommentGuildMemberOnline = Your guildmate {member_name} the {member_class} is online. Say something to the guild about them.|Greet {member_name} in guild chat, or ask what they are up to.|Mention {member_name}, level {member_level}, to the guild.
+
+# OllamaChat.EnvCommentRecentEvent
+#   Description: A pipe-separated (|) list of template messages for when the bot recalls something it just witnessed.
+#   Placeholders (named): {event_text}
+OllamaChat.EnvCommentRecentEvent = You just saw this happen: {event_text}. React to it.|Something you witnessed: {event_text}. Comment on it naturally.|Bring up what just happened: {event_text}.|You are still thinking about this: {event_text}. Say something about it.
+
+# OllamaChat.EnvCommentNamedNpc
+#   Description: A pipe-separated (|) list of template messages for when a named NPC is standing nearby.
+#   Placeholders (named): {npc_name} {npc_role}
+OllamaChat.EnvCommentNamedNpc = {npc_name} the {npc_role} is standing nearby. Say something about them.|You see {npc_name}, a {npc_role}. Remark on what they offer.|Mention {npc_name} the {npc_role} and whether they are worth visiting.
+
+# OllamaChat.EnvCommentZoneLandmark
+#   Description: A pipe-separated (|) list of template messages for when the bot remarks on where it is.
+#   Placeholders (named): {area_name} {zone_name}
+OllamaChat.EnvCommentZoneLandmark = You are in {area_name}, part of {zone_name}. Say something about this place.|Remark on the look or feel of {area_name}.|Comment on what {zone_name} is known for.|Say whether {area_name} is worth lingering in.
+
+# OllamaChat.EnvCommentTimeOfDay
+#   Description: A pipe-separated (|) list of template messages for when the bot remarks on the hour.
+#   Placeholders (named): {time_of_day}
+OllamaChat.EnvCommentTimeOfDay = It is {time_of_day}. Remark on the hour.|Comment on it being {time_of_day} and what that means for travelling.|Mention that it is {time_of_day} and how you feel about it.
+
+# OllamaChat.EnvCommentCorpse
+#   Description: A pipe-separated (|) list of template messages for when a corpse is on the ground nearby.
+#   Placeholders (named): {creature_name}
+OllamaChat.EnvCommentCorpse = There is a dead {creature_name} on the ground here. React to it.|You see the corpse of a {creature_name}. Say something about the fight that happened.|Remark on the slain {creature_name} nearby.
+
+# OllamaChat.EnvCommentDanger
+#   Description: A pipe-separated (|) list of template messages for when a nearby creature outlevels the bot.
+#   Placeholders (named): {creature_name} {level_delta}
+OllamaChat.EnvCommentDanger = A {creature_name} is nearby and it is {level_delta} levels above you. Warn or brag.|The {creature_name} here looks dangerous. Say whether you would take it on.|Comment on the threat the {creature_name} poses.
+
+# OllamaChat.EnvCommentQuestObjective
+#   Description: A pipe-separated (|) list of template messages for when the bot is partway through a quest.
+#   Placeholders (named): {quest_name} {objective}
+OllamaChat.EnvCommentQuestObjective = You are partway through '{quest_name}' and still need to {objective}. Mention it.|Talk about your task '{quest_name}' and what is left: {objective}.|Bring up '{quest_name}' and ask for help or advice with it.|Complain or enthuse about '{quest_name}'.
+
+# OllamaChat.EnvCommentGroupNeed
+#   Description: A pipe-separated (|) list of template messages for when a group member needs something.
+#   Placeholders (named): {member_name} {need}
+OllamaChat.EnvCommentGroupNeed = {member_name} is {need}. Say something useful about it.|Point out that {member_name} is {need}.|React to {member_name} being {need}.
+
+# OllamaChat.Roleplay.PromptVariations
+#   Description: A pipe-separated (|) list of template messages for when roleplay-mode statement prompts, replacing the shipped random-chatter list at Roleplay.Strictness 2.
+#   Placeholders (named): none
+OllamaChat.Roleplay.PromptVariations = Remark on the weather or the road ahead.|Mention a rumour you heard in the last town.|Say something about the war and what it has cost.|Complain about the price of supplies.|Speak of someone you have lost.|Mention where you are headed and why.|Say something about your faith or what you believe in.|Comment on the state of the land here.|Talk about a beast or enemy you have fought recently.|Mention hunger, thirst, or how long since you last slept.|Say something about your homeland.|Remark on how far you are from anywhere safe.|Speak of an old debt or grudge.|Mention a piece of your gear and where it came from.|Say something about the people passing through here.
+
+# OllamaChat.Roleplay.QuestionVariations
+#   Description: A pipe-separated (|) list of template messages for when roleplay-mode question prompts, used the same way.
+#   Placeholders (named): none
+OllamaChat.Roleplay.QuestionVariations = Ask whether the road ahead is safe.|Ask if anyone has news from the front.|Ask where a person might find work here.|Ask what happened in this place.|Ask whether anyone has seen a particular kind of beast nearby.|Ask where the nearest inn or camp is.|Ask someone where they hail from.|Ask whether the local lord or chieftain is worth trusting.|Ask if anyone needs a hand with something.|Ask what the strangest thing seen around here has been.|Ask whether the water or food here can be trusted.|Ask how long the fighting has been going on.
+
+# --------------------------------------------
+# OPTIONAL PROMPT OVERRIDES
+# --------------------------------------------
+#
+# Leave these EMPTY to use the module’s built-in prompt, which is what
+# almost everyone wants. They are listed only so the core stops warning
+# that the key is missing. Set one to override that prompt entirely.
+
+# OllamaChat.EmoteReactionPromptTemplate
+#   Description: Prompt used when a player emotes at a bot.
+#   Empty = use the built-in default.
+OllamaChat.EmoteReactionPromptTemplate = ""
+
+# OllamaChat.Memory.CondensePrompt
+#   Description: Prompt that distils a bot’s conversation history into long-term memories.
+#   Empty = use the built-in default.
+OllamaChat.Memory.CondensePrompt = ""
+
+# OllamaChat.Memory.PromptTemplate
+#   Description: Wrapper around the memory list injected into a prompt.
+#   Empty = use the built-in default.
+OllamaChat.Memory.PromptTemplate = ""
+
+# OllamaChat.Relationship.PromptTemplate
+#   Description: Wrapper around the relationship list injected into a prompt.
+#   Empty = use the built-in default.
+OllamaChat.Relationship.PromptTemplate = ""
+
+# OllamaChat.Relationship.UpdatePrompt
+#   Description: Prompt that rewrites how a bot feels about someone.
+#   Empty = use the built-in default.
+OllamaChat.Relationship.UpdatePrompt = ""
+
+# --------------------------------------------
+# OPTIONAL SAMPLING PENALTIES
+# --------------------------------------------
+#
+# -1000 is a sentinel meaning "do not send this parameter at all", so the
+# model’s own default applies. Set a real value (typically 0.0 to 2.0) only
+# if you know you want it.
+
+# OllamaChat.PresencePenalty
+#   Description: Discourages tokens that already appeared. -1000 = omit the parameter.
+#   Default: -1000
+OllamaChat.PresencePenalty = -1000
+
+# OllamaChat.FrequencyPenalty
+#   Description: Discourages tokens by how often they appeared. -1000 = omit the parameter.
+#   Default: -1000
+OllamaChat.FrequencyPenalty = -1000
+
