@@ -10,6 +10,7 @@
 #include "mod-ollama-chat_dispatch.h"
 #include "mod-ollama-chat_memory.h"
 #include "mod-ollama-chat_roleplay.h"
+#include "mod-ollama-chat_response.h"
 #include "mod-ollama-chat_topics.h"
 #include "mod-ollama-chat_words.h"
 #include "mod-ollama-chat-utilities.h"
@@ -633,6 +634,27 @@ void LoadOllamaChatConfig()
         sConfigMgr->GetOption<std::string>("OllamaChat.Words.NoGuild", "No Guild"),
         sConfigMgr->GetOption<std::string>("OllamaChat.Words.ThePlayer", "The player"),
         sConfigMgr->GetOption<std::string>("OllamaChat.PromptLocale", ""));
+
+    Words_ConfigureReplyLengthBuckets(
+        sConfigMgr->GetOption<std::string>("OllamaChat.ReplyLength.Buckets", "15:100"));
+
+    std::string assistantPhraseConfig = sConfigMgr->GetOption<std::string>(
+        "OllamaChat.AssistantPhrases",
+        "en qué puedo ayudarte|en que puedo ayudarte|how can i help|how can i assist|as an ai|como ia|como modelo de lenguaje|no dudes en");
+    std::vector<std::string> assistantPhrases;
+    std::stringstream assistantPhraseStream(assistantPhraseConfig);
+    std::string assistantPhrase;
+    while (std::getline(assistantPhraseStream, assistantPhrase, '|'))
+    {
+        const size_t first = assistantPhrase.find_first_not_of(" \t\r\n");
+        const size_t last = assistantPhrase.find_last_not_of(" \t\r\n");
+        if (first == std::string::npos)
+            continue;
+
+        assistantPhrase = assistantPhrase.substr(first, last - first + 1);
+        assistantPhrases.push_back(std::move(assistantPhrase));
+    }
+    AssistantPhrases_Publish(assistantPhrases);
 
     g_MaxConcurrentQueries            = sConfigMgr->GetOption<uint32_t>("OllamaChat.MaxConcurrentQueries", 0);
 

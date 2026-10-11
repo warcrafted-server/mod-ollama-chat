@@ -332,7 +332,8 @@ std::string OllamaBotEventChatter::BuildPrompt(Player* bot, std::string promptTe
         fmt::arg("event_type", eventType),
         fmt::arg("event_detail", eventDetail),
         fmt::arg("actor_name", actorName),
-        fmt::arg("sentiment_info", sentimentInfo));
+        fmt::arg("sentiment_info", sentimentInfo),
+        fmt::arg("max_words", Words_SampleMaxWords()));
 
     prompt += Memory_BuildPromptSection(bot, nullptr);
     prompt += Roleplay_BuildVoicePrompt(bot);

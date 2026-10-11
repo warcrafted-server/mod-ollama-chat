@@ -156,7 +156,8 @@ namespace
             fmt::arg("bot_map", OllamaContinentName(bot)),
             fmt::arg("bot_personality", personalityPrompt),
             fmt::arg("bot_personality_name", personality),
-            fmt::arg("environment_info", environmentInfo));
+            fmt::arg("environment_info", environmentInfo),
+            fmt::arg("max_words", Words_SampleMaxWords()));
 
         // Statement or question. At roleplay strictness 2 the in-character
         // lists replace the shipped ones, which otherwise push bots toward

@@ -1972,7 +1972,8 @@ std::string GenerateBotPrompt(Player* bot, std::string playerMessage, Player* pl
         fmt::arg("player_message", playerMessage),
         fmt::arg("extra_info", extraInfo),
         fmt::arg("chat_history", chatHistory),
-        fmt::arg("sentiment_info", sentimentInfo)
+        fmt::arg("sentiment_info", sentimentInfo),
+        fmt::arg("max_words", Words_SampleMaxWords())
     );
 
     // Add RAG information to the prompt if available
@@ -2035,7 +2036,8 @@ std::string BuildEmoteReactionPrompt(Player* bot, Player* player, uint32_t textE
         fmt::arg("player_name", player->GetName()),
         fmt::arg("player_class", Words_ClassName(player->getClass())),
         fmt::arg("player_race", Words_RaceName(player->getRace())),
-        fmt::arg("emote_name", emoteName));
+        fmt::arg("emote_name", emoteName),
+        fmt::arg("max_words", Words_SampleMaxWords()));
 
     if (g_RoleplayEnable)
         prompt += Roleplay_BuildVoicePrompt(bot);

@@ -3,7 +3,12 @@
 #include "ChatHelper.h"
 #include "DBCStores.h"
 #include "Guild.h"
+#include "Log.h"
 #include "PlayerbotAI.h"
+
+#include <charconv>
+#include <limits>
+#include <string_view>
 
 namespace
 {
@@ -17,6 +22,34 @@ namespace
     std::string g_ThePlayer = "The player";
     LocaleConstant g_PromptLocale = LOCALE_enUS;
     bool g_UsePromptLocale = false;
+    std::vector<std::pair<uint32_t, uint32_t>> g_ReplyLengthBuckets = { { 15, 100 } };
+    uint32_t g_ReplyLengthTotalWeight = 100;
+    bool g_ReplyLengthConfigErrorLogged = false;
+
+    std::string_view TrimView(std::string_view value)
+    {
+        const size_t start = value.find_first_not_of(" \t\r\n");
+        if (start == std::string_view::npos)
+            return {};
+        const size_t end = value.find_last_not_of(" \t\r\n");
+        return value.substr(start, end - start + 1);
+    }
+
+    bool ParsePositiveUint(std::string_view text, uint32_t& value)
+    {
+        text = TrimView(text);
+        if (text.empty())
+            return false;
+
+        uint64_t parsed = 0;
+        auto result = std::from_chars(text.data(), text.data() + text.size(), parsed);
+        if (result.ec != std::errc() || result.ptr != text.data() + text.size() ||
+            parsed == 0 || parsed > std::numeric_limits<uint32_t>::max())
+            return false;
+
+        value = static_cast<uint32_t>(parsed);
+        return true;
+    }
 
     std::string LocalizedName(char const* const* names)
     {
@@ -27,6 +60,71 @@ namespace
         char const* english = names[LOCALE_enUS];
         return english ? english : "";
     }
+}
+
+void Words_ConfigureReplyLengthBuckets(const std::string& buckets)
+{
+    std::vector<std::pair<uint32_t, uint32_t>> parsedBuckets;
+    uint64_t totalWeight = 0;
+    size_t start = 0;
+    bool valid = !buckets.empty();
+
+    while (valid && start < buckets.size())
+    {
+        const size_t comma = buckets.find(',', start);
+        const size_t end = comma == std::string::npos ? buckets.size() : comma;
+        const std::string_view entry = TrimView(std::string_view(buckets).substr(start, end - start));
+        const size_t colon = entry.find(':');
+
+        uint32_t maxWords = 0;
+        uint32_t weight = 0;
+        if (colon == std::string_view::npos || entry.find(':', colon + 1) != std::string_view::npos ||
+            !ParsePositiveUint(entry.substr(0, colon), maxWords) ||
+            !ParsePositiveUint(entry.substr(colon + 1), weight) ||
+            totalWeight + weight > std::numeric_limits<uint32_t>::max())
+        {
+            valid = false;
+            break;
+        }
+
+        parsedBuckets.emplace_back(maxWords, weight);
+        totalWeight += weight;
+        if (comma == std::string::npos)
+            break;
+        start = comma + 1;
+        if (start == buckets.size())
+            valid = false;
+    }
+
+    if (!valid || parsedBuckets.empty() || totalWeight == 0)
+    {
+        g_ReplyLengthBuckets = { { 15, 100 } };
+        g_ReplyLengthTotalWeight = 100;
+        if (!g_ReplyLengthConfigErrorLogged)
+        {
+            LOG_WARN("module.ollamachat",
+                     "[Ollama Chat] Invalid OllamaChat.ReplyLength.Buckets '{}'; using 15:100.", buckets);
+            g_ReplyLengthConfigErrorLogged = true;
+        }
+        return;
+    }
+
+    g_ReplyLengthBuckets = std::move(parsedBuckets);
+    g_ReplyLengthTotalWeight = static_cast<uint32_t>(totalWeight);
+}
+
+uint32_t Words_SampleMaxWords()
+{
+    const uint32_t roll = urand(1, g_ReplyLengthTotalWeight);
+    uint32_t cumulativeWeight = 0;
+    for (const auto& [maxWords, weight] : g_ReplyLengthBuckets)
+    {
+        cumulativeWeight += weight;
+        if (roll <= cumulativeWeight)
+            return maxWords;
+    }
+
+    return 15;
 }
 
 void Words_Configure(const std::string& male, const std::string& female,

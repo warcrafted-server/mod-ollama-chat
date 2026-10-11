@@ -4,6 +4,12 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); v
 
 ## [Sin publicar]
 
+## [0.4.0] - 2026-10-12
+
+### Añadido
+- Marcador `{max_words}` en las plantillas de prompt (chat, gesto, charla aleatoria y eventos) y opción `OllamaChat.ReplyLength.Buckets` (`MAX:PESO,...`) para muestrear un tope de palabras distinto en cada respuesta. Por defecto `15:100`, igual que antes.
+- Opción `OllamaChat.AssistantPhrases`: lista de frases típicas de asistente (`en qué puedo ayudarte`, `no dudes en`…); la respuesta que las contiene se descarta.
+
 ## [0.3.0] - 2026-10-12
 
 ### Añadido

@@ -1,13 +1,20 @@
 #include "mod-ollama-chat_response.h"
 #include "mod-ollama-chat_config.h"
 #include "mod-ollama-chat_expression.h"
+#include "Log.h"
 
 #include <algorithm>
+#include <atomic>
 #include <cctype>
+#include <mutex>
 #include <vector>
 
 namespace
 {
+    std::mutex g_assistantPhrasesMutex;
+    std::vector<std::string> g_assistantPhrases;
+    std::atomic<uint64_t> g_assistantPhraseDiscardCount{ 0 };
+
     inline bool IsSpace(unsigned char c)
     {
         return c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\f' || c == '\v';
@@ -94,6 +101,47 @@ namespace
         }
         // Anything above the BMP is decoration we drop anyway.
     }
+
+    std::string LowercaseUtf8(const std::string& text)
+    {
+        std::string lower;
+        lower.reserve(text.size());
+        size_t i = 0;
+        while (i < text.size())
+        {
+            const size_t start = i;
+            size_t sequenceLength = 0;
+            uint32_t codepoint = DecodeUtf8(text, i, sequenceLength);
+            if (codepoint >= 'A' && codepoint <= 'Z')
+                codepoint += 'a' - 'A';
+            else if ((codepoint >= 0x00C0 && codepoint <= 0x00D6) ||
+                     (codepoint >= 0x00D8 && codepoint <= 0x00DE))
+                codepoint += 0x20;
+            else if (codepoint == 0x0178)
+                codepoint = 0x00FF;
+
+            if (codepoint > 0xFFFF)
+                lower.append(text, start, sequenceLength);
+            else
+                AppendUtf8(lower, codepoint);
+        }
+        return lower;
+    }
+}
+
+void AssistantPhrases_Publish(const std::vector<std::string>& phrases)
+{
+    std::lock_guard<std::mutex> lock(g_assistantPhrasesMutex);
+    g_assistantPhrases.clear();
+    g_assistantPhrases.reserve(phrases.size());
+    for (const std::string& phrase : phrases)
+        g_assistantPhrases.push_back(LowercaseUtf8(phrase));
+}
+
+std::vector<std::string> AssistantPhrases_Snapshot()
+{
+    std::lock_guard<std::mutex> lock(g_assistantPhrasesMutex);
+    return g_assistantPhrases;
 }
 
 // --------------------------------------------------------------------------
@@ -413,5 +461,20 @@ std::string ProcessLlmResponse(const std::string& raw,
     s = CollapseWhitespace(s);
     s = ClampReplyLength(s, g_MaxReplyLength);
 
-    return Trim(s);
+    s = Trim(s);
+
+    const std::string lower = LowercaseUtf8(s);
+
+    for (const std::string& phrase : AssistantPhrases_Snapshot())
+    {
+        if (!phrase.empty() && lower.find(phrase) != std::string::npos)
+        {
+            const uint64_t discarded = g_assistantPhraseDiscardCount.fetch_add(1) + 1;
+            if (g_DebugEnabled)
+                LOG_INFO("module.ollamachat", "[Ollama Chat] Discarded assistant-like reply (total: {}).", discarded);
+            return "";
+        }
+    }
+
+    return s;
 }

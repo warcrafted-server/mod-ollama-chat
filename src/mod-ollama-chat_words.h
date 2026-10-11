@@ -5,6 +5,8 @@
 #include "SharedDefines.h"
 
 #include <string>
+#include <utility>
+#include <vector>
 
 class Guild;
 class PlayerbotAI;
@@ -14,6 +16,8 @@ void Words_Configure(const std::string& male, const std::string& female,
                      const std::string& inGroup, const std::string& solo,
                      const std::string& noGuild, const std::string& thePlayer,
                      const std::string& promptLocale);
+void Words_ConfigureReplyLengthBuckets(const std::string& buckets);
+uint32_t Words_SampleMaxWords();
 
 std::string Words_Gender(uint8 gender);
 std::string Words_Faction(TeamId faction);

@@ -3,6 +3,7 @@
 
 #include <string>
 #include <cstdint>
+#include <vector>
 
 // --------------------------------------------------------------------------
 // Response post-processing pipeline.
@@ -42,6 +43,11 @@ std::string StripDecorativeUnicode(const std::string& text);
 // in the tail, otherwise at the last word boundary. Never cuts mid-word and
 // never splits a UTF-8 sequence.
 std::string ClampReplyLength(const std::string& text, uint32_t maxLen);
+
+// Publish/read the response phrase filter without exposing mutable config
+// strings to the response worker.
+void AssistantPhrases_Publish(const std::vector<std::string>& phrases);
+std::vector<std::string> AssistantPhrases_Snapshot();
 
 // Run the full pipeline. Returns an empty string only when nothing usable
 // survived, in which case the caller should skip the reply.
