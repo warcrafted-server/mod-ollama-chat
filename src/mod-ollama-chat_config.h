@@ -484,6 +484,15 @@ extern bool g_EnableTypingSimulation;
 extern uint32_t g_TypingSimulationBaseDelay;      // Base delay in milliseconds
 extern uint32_t g_TypingSimulationDelayPerChar;   // Delay per character in milliseconds
 extern uint32_t g_TypingSimulationMaxDelay;       // Ceiling, so a long reply is not lost
+// Human-like response pacing. POD values are safe for dispatcher workers to read.
+extern uint32_t g_HumanEnable;
+extern uint32_t g_HumanReadMinMs;
+extern uint32_t g_HumanReadMaxMs;
+extern uint32_t g_HumanCharsPerSecond;
+extern uint32_t g_HumanDistractedChance;
+extern uint32_t g_HumanDistractedMinMs;
+extern uint32_t g_HumanDistractedMaxMs;
+extern uint32_t g_HumanMaxDelayMs;
 
 // --------------------------------------------
 // Loader Functions

@@ -4,6 +4,12 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); v
 
 ## [Sin publicar]
 
+## [0.7.0] - 2026-10-12
+
+### Añadido
+- Volumen humano en canales públicos: `OllamaChat.Human.ChannelReplyChance`, `.ChannelQuestionChance` y `.SecondReplyChance` hacen que muchos mensajes se queden sin respuesta y que normalmente conteste un solo bot. Los bots mencionados por nombre no pasan por esa puerta. Por defecto 100 (sin cambio).
+- Retraso de entrega humano (`OllamaChat.Human.Enable` y `.ReadMinMs`, `.ReadMaxMs`, `.CharsPerSecond`, `.DistractedChance`, `.DistractedMinMs`, `.DistractedMaxMs`, `.MaxDelayMs`): lectura + escritura + despiste ocasional, medido desde que se envía la petición, de modo que el tiempo del modelo cuenta dentro del retraso. Desactivado por defecto.
+
 ## [0.6.0] - 2026-10-12
 
 ### Añadido

@@ -25,12 +25,14 @@
 #include "PlayerbotAI.h"
 #include "PlayerbotMgr.h"
 
+#include <algorithm>
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
 #include <deque>
 #include <list>
 #include <mutex>
+#include <random>
 #include <thread>
 #include <vector>
 
@@ -44,6 +46,7 @@ namespace
     {
         TaskType          type = TaskType::ChatReply;
         OllamaChatRequest request;
+        Clock::time_point submittedAt;
 
         // Sentiment-only payload.
         uint64_t    sentimentBotGuid    = 0;
@@ -63,8 +66,24 @@ namespace
         OllamaChatRequest request;
         std::string       text;
         uint32_t          emoteId = 0;
+        Clock::time_point submittedAt;
         Clock::time_point deliverAt;
     };
+
+    size_t Utf8CharacterCount(const std::string& text)
+    {
+        size_t count = 0;
+        for (unsigned char byte : text)
+            if ((byte & 0xC0) != 0x80)
+                ++count;
+        return count;
+    }
+
+    uint32_t RandomInclusive(uint32_t min, uint32_t max)
+    {
+        thread_local std::mt19937 generator(std::random_device{}());
+        return std::uniform_int_distribution<uint32_t>(min, max)(generator);
+    }
 
     // --- shared state -----------------------------------------------------
 
@@ -140,18 +159,49 @@ namespace
         completion.request = task.request;
         completion.text    = std::move(text);
         completion.emoteId = emoteId;
+        completion.submittedAt = task.submittedAt;
 
-        uint32_t delayMs = 0;
-        if (g_EnableTypingSimulation)
+        if (g_HumanEnable)
         {
-            delayMs = g_TypingSimulationBaseDelay +
-                      static_cast<uint32_t>(completion.text.length()) * g_TypingSimulationDelayPerChar;
-            if (g_TypingSimulationMaxDelay > 0 && delayMs > g_TypingSimulationMaxDelay)
-                delayMs = g_TypingSimulationMaxDelay;
-        }
+            const uint32_t readMinMs = std::min(g_HumanReadMinMs, g_HumanReadMaxMs);
+            const uint32_t readMaxMs = std::max(g_HumanReadMinMs, g_HumanReadMaxMs);
+            const uint32_t distractedMinMs = std::min(g_HumanDistractedMinMs, g_HumanDistractedMaxMs);
+            const uint32_t distractedMaxMs = std::max(g_HumanDistractedMinMs, g_HumanDistractedMaxMs);
+            const uint32_t distractedChance = std::min(100U, g_HumanDistractedChance);
+            const uint32_t charsPerSecond = std::max(1U, g_HumanCharsPerSecond);
+            const uint32_t maxDelayMs = g_HumanMaxDelayMs;
 
-        // A delay, not a sleep. The old code held a whole thread hostage here.
-        completion.deliverAt = Clock::now() + std::chrono::milliseconds(delayMs);
+            const uint32_t readMs = RandomInclusive(readMinMs, readMaxMs);
+            const uint64_t writeMs = static_cast<uint64_t>(Utf8CharacterCount(completion.text)) * 1000 /
+                                     charsPerSecond;
+            uint64_t totalDelayMs = static_cast<uint64_t>(readMs) + writeMs;
+
+            if (!completion.request.directAddress &&
+                distractedChance > 0 &&
+                RandomInclusive(1, 100) <= distractedChance)
+                totalDelayMs += RandomInclusive(distractedMinMs, distractedMaxMs);
+
+            if (maxDelayMs > 0 && totalDelayMs > maxDelayMs)
+                totalDelayMs = maxDelayMs;
+
+            const Clock::time_point target = completion.submittedAt +
+                                             std::chrono::milliseconds(totalDelayMs);
+            completion.deliverAt = std::max(Clock::now() + std::chrono::milliseconds(300), target);
+        }
+        else
+        {
+            uint32_t delayMs = 0;
+            if (g_EnableTypingSimulation)
+            {
+                delayMs = g_TypingSimulationBaseDelay +
+                          static_cast<uint32_t>(completion.text.length()) * g_TypingSimulationDelayPerChar;
+                if (g_TypingSimulationMaxDelay > 0 && delayMs > g_TypingSimulationMaxDelay)
+                    delayMs = g_TypingSimulationMaxDelay;
+            }
+
+            // A delay, not a sleep. The old code held a whole thread hostage here.
+            completion.deliverAt = Clock::now() + std::chrono::milliseconds(delayMs);
+        }
 
         std::lock_guard<std::mutex> lock(g_doneMutex);
         g_done.push_back(std::move(completion));
@@ -514,6 +564,7 @@ bool OllamaDispatch_Submit(OllamaChatRequest request)
             return false;
         }
 
+        task.submittedAt = Clock::now();
         g_queue.push_back(std::move(task));
     }
 

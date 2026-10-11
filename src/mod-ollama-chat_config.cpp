@@ -485,6 +485,14 @@ bool g_EnableTypingSimulation = false;
 uint32_t g_TypingSimulationBaseDelay = 1000;     // 1000ms base delay
 uint32_t g_TypingSimulationDelayPerChar = 250;
 uint32_t g_TypingSimulationMaxDelay     = 8000;   // 250ms per character (4 chars/sec)
+uint32_t g_HumanEnable              = 0;
+uint32_t g_HumanReadMinMs            = 1000;
+uint32_t g_HumanReadMaxMs            = 4000;
+uint32_t g_HumanCharsPerSecond       = 4;
+uint32_t g_HumanDistractedChance     = 15;
+uint32_t g_HumanDistractedMinMs      = 10000;
+uint32_t g_HumanDistractedMaxMs      = 40000;
+uint32_t g_HumanMaxDelayMs           = 45000;
 
 // Load Bot Personalities from Database
 void LoadBotPersonalityList()
@@ -942,6 +950,18 @@ void LoadOllamaChatConfig()
     g_TypingSimulationBaseDelay       = sConfigMgr->GetOption<uint32_t>("OllamaChat.TypingSimulationBaseDelay", 1000);
     g_TypingSimulationDelayPerChar    = sConfigMgr->GetOption<uint32_t>("OllamaChat.TypingSimulationDelayPerChar", 250);
     g_TypingSimulationMaxDelay        = sConfigMgr->GetOption<uint32_t>("OllamaChat.TypingSimulationMaxDelay", 8000);
+    g_HumanEnable           = sConfigMgr->GetOption<uint32_t>("OllamaChat.Human.Enable", 0) ? 1 : 0;
+    g_HumanReadMinMs        = sConfigMgr->GetOption<uint32_t>("OllamaChat.Human.ReadMinMs", 1000);
+    g_HumanReadMaxMs        = sConfigMgr->GetOption<uint32_t>("OllamaChat.Human.ReadMaxMs", 4000);
+    g_HumanCharsPerSecond   = std::max(1U, sConfigMgr->GetOption<uint32_t>("OllamaChat.Human.CharsPerSecond", 4));
+    g_HumanDistractedChance = std::min(100U, sConfigMgr->GetOption<uint32_t>("OllamaChat.Human.DistractedChance", 15));
+    g_HumanDistractedMinMs  = sConfigMgr->GetOption<uint32_t>("OllamaChat.Human.DistractedMinMs", 10000);
+    g_HumanDistractedMaxMs  = sConfigMgr->GetOption<uint32_t>("OllamaChat.Human.DistractedMaxMs", 40000);
+    g_HumanMaxDelayMs       = sConfigMgr->GetOption<uint32_t>("OllamaChat.Human.MaxDelayMs", 45000);
+    if (g_HumanReadMinMs > g_HumanReadMaxMs)
+        std::swap(g_HumanReadMinMs, g_HumanReadMaxMs);
+    if (g_HumanDistractedMinMs > g_HumanDistractedMaxMs)
+        std::swap(g_HumanDistractedMinMs, g_HumanDistractedMaxMs);
 
     g_EventTypeDefeated           = sConfigMgr->GetOption<std::string>("OllamaChat.EventTypeDefeated", "");
     g_EventTypeDefeatedPlayer     = sConfigMgr->GetOption<std::string>("OllamaChat.EventTypeDefeatedPlayer", "");

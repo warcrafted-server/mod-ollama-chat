@@ -596,6 +596,49 @@ OllamaChat.TypingSimulationBaseDelay = 1000
 #     Default:     250
 OllamaChat.TypingSimulationDelayPerChar = 250
 
+# Human-like response pacing. When enabled, reading, writing and occasional
+# distraction time are measured from when the request enters the dispatcher,
+# so time spent waiting for the model counts toward the delay.
+# OllamaChat.Human.Enable
+#     Description: Enables human-like reading and typing delays (1 = enabled, 0 = disabled).
+#     Default:     0
+OllamaChat.Human.Enable = 0
+
+# OllamaChat.Human.ReadMinMs
+#     Description: Minimum simulated reading time before writing, in milliseconds.
+#     Default:     1000
+OllamaChat.Human.ReadMinMs = 1000
+
+# OllamaChat.Human.ReadMaxMs
+#     Description: Maximum simulated reading time before writing, in milliseconds.
+#     Default:     4000
+OllamaChat.Human.ReadMaxMs = 4000
+
+# OllamaChat.Human.CharsPerSecond
+#     Description: Simulated typing speed in UTF-8 characters per second; values below 1 are read as 1.
+#     Default:     4
+OllamaChat.Human.CharsPerSecond = 4
+
+# OllamaChat.Human.DistractedChance
+#     Description: Chance (0-100) of adding an occasional distraction delay; direct-address replies are exempt.
+#     Default:     15
+OllamaChat.Human.DistractedChance = 15
+
+# OllamaChat.Human.DistractedMinMs
+#     Description: Minimum extra distraction delay, in milliseconds.
+#     Default:     10000
+OllamaChat.Human.DistractedMinMs = 10000
+
+# OllamaChat.Human.DistractedMaxMs
+#     Description: Maximum extra distraction delay, in milliseconds.
+#     Default:     40000
+OllamaChat.Human.DistractedMaxMs = 40000
+
+# OllamaChat.Human.MaxDelayMs
+#     Description: Maximum total delay measured from dispatcher submission; 0 disables the cap.
+#     Default:     45000
+OllamaChat.Human.MaxDelayMs = 45000
+
 # --------------------------------------------
 # RP PERSONALITIES SYSTEM
 # --------------------------------------------
