@@ -162,4 +162,4 @@ Referencia útil: `~/Repos/mods/mod-ollama-chat-es` (fork de producción) ya res
 barato y de mucho impacto; 3 y 4 son los más delicados.
 
 ## Estado
-- [ ] 0 · [ ] 7 · [x] 1 (v0.2.0, falta probar en acore-test) · [~] 2a hecho v0.3.0 · [~] 6 (C++ v0.4.0 hecho; texto en docs/CONFIG_ES.md) · [x] 3 (v0.5.0 + v0.6.0, falta probar en juego) · [x] 4 (v0.7.0, falta probar en juego) · [x] 5 (v0.8.0, probado el módulo de estilo suelto)
+- [ ] 0 · [x] 7 (v0.8.1, línea base: 0 líneas de bot en el log) · [x] 1 (v0.2.0, falta probar en acore-test) · [~] 2a hecho v0.3.0 · [~] 6 (C++ v0.4.0 hecho; texto en docs/CONFIG_ES.md) · [x] 3 (v0.5.0 + v0.6.0, falta probar en juego) · [x] 4 (v0.7.0, falta probar en juego) · [x] 5 (v0.8.0, probado el módulo de estilo suelto)

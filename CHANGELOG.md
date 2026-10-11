@@ -4,6 +4,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); v
 
 ## [Sin publicar]
 
+## [0.8.1] - 2026-10-12
+
+### Añadido
+- `apps/chat_metrics.py`: mide sobre un `Server.log` si los bots suenan a humanos (preguntas finales, longitud, mayúsculas, inglés, mensajes sin respuesta, repeticiones).
+
 ## [0.8.0] - 2026-10-12
 
 ### Añadido
