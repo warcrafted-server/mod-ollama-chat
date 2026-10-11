@@ -15,6 +15,8 @@ struct OllamaApiResult
 {
     std::string text;             // model output, reasoning already removed
     std::string thinking;         // native reasoning, kept only for debug logs
+    std::string finishReason;     // provider finish reason, when available
+    uint64_t    reasoningTokens = 0; // provider-reported hidden reasoning tokens
     bool        ok        = false;
     int         status    = 0;
     std::string error;
@@ -43,6 +45,7 @@ struct OllamaEndpointSettings
     std::string systemPrompt;
     std::string stop;
     std::string seed;
+    std::string reasoningEffort;
 
     // Wire format for `url`, and the credential it needs. The key is carried
     // here (not read from g_OllamaApiKey) for the same reason as everything

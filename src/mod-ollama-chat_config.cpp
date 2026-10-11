@@ -107,6 +107,7 @@ uint32_t    g_OllamaNumThreads = 0;
 std::string g_OllamaStop = "";
 std::string g_OllamaSystemPrompt = "";
 std::string g_OllamaSeed = "";
+std::string g_OllamaReasoningEffort;
 int32_t     g_OllamaTopK             = -1;
 float       g_OllamaMinP             = -1.0f;
 float       g_OllamaPresencePenalty  = -1000.0f;
@@ -619,6 +620,7 @@ void LoadOllamaChatConfig()
     g_OllamaStop                      = sConfigMgr->GetOption<std::string>("OllamaChat.Stop", "");
     g_OllamaSystemPrompt              = sConfigMgr->GetOption<std::string>("OllamaChat.SystemPrompt", "");
     g_OllamaSeed                      = sConfigMgr->GetOption<std::string>("OllamaChat.Seed", "");
+    g_OllamaReasoningEffort           = sConfigMgr->GetOption<std::string>("OllamaChat.ReasoningEffort", "");
 
     g_MaxConcurrentQueries            = sConfigMgr->GetOption<uint32_t>("OllamaChat.MaxConcurrentQueries", 0);
 

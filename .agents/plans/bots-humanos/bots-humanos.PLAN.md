@@ -162,4 +162,4 @@ Referencia útil: `~/Repos/mods/mod-ollama-chat-es` (fork de producción) ya res
 barato y de mucho impacto; 3 y 4 son los más delicados.
 
 ## Estado
-- [ ] 0 · [ ] 7 · [ ] 1 · [ ] 2 · [ ] 6 · [ ] 3 · [ ] 4 · [ ] 5
+- [ ] 0 · [ ] 7 · [x] 1 (v0.2.0, falta probar en acore-test) · [ ] 2 · [ ] 6 · [ ] 3 · [ ] 4 · [ ] 5

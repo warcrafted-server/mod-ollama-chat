@@ -185,6 +185,19 @@ OllamaChat.NumPredict = 100
 #     Default:     512
 OllamaChat.ReasoningTokenReserve = 512
 
+# OllamaChat.ReasoningEffort
+#     Description: Optional reasoning effort sent to OpenAI-compatible chat
+#                  requests. When set, this value takes precedence over the
+#                  ThinkMode-selected effort; leave empty to keep the existing
+#                  ThinkMode behavior. Supported values depend on the provider
+#                  and model (OpenAI gpt-6-luna accepts none, low, medium, high,
+#                  and xhigh).
+#     Example:     For gpt-6-luna with OpenAI, set OllamaChat.Provider = openai,
+#                  OllamaChat.Model = gpt-6-luna, OllamaChat.NumPredict = 100,
+#                  and OllamaChat.ReasoningEffort = none.
+#     Default:     (empty)
+OllamaChat.ReasoningEffort = ""
+
 # OllamaChat.Temperature
 #     Description: Controls the "creativity" or randomness of the model’s output.
 #                  Lower values (e.g., 0.2) = more focused, repetitive, and predictable.

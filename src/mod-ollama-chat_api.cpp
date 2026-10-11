@@ -162,6 +162,7 @@ namespace
     // ----------------------------------------------------------------------
     nlohmann::json BuildOpenAIRequest(const OllamaEndpointSettings& cfg,
                                       const std::string& prompt,
+                                      OllamaRequestKind kind,
                                       const OllamaThinkRequest& think,
                                       uint32_t reasoningReserve)
     {
@@ -209,10 +210,11 @@ namespace
 
         // There is no "think: false" in this format: a reasoning model reasons
         // regardless, and a non-reasoning model rejects the field outright
-        // (which the think-rejection self-heal then remembers). So the field
-        // is only ever sent when reasoning is wanted, or when the module has
-        // learned this model reasons unconditionally and wants it turned down.
-        if (!think.level.empty())
+        // (which the think-rejection self-heal then remembers). An explicit
+        // chat reasoning effort takes precedence; otherwise follow think mode.
+        if (kind != OllamaRequestKind::Sentiment && !cfg.reasoningEffort.empty())
+            request["reasoning_effort"] = cfg.reasoningEffort;
+        else if (!think.level.empty())
             request["reasoning_effort"] = think.level;
         else if (think.wanted)
             request["reasoning_effort"] = "medium";
@@ -280,12 +282,13 @@ namespace
 
     nlohmann::json BuildRequest(const OllamaEndpointSettings& cfg,
                                 const std::string& prompt,
+                                OllamaRequestKind kind,
                                 const OllamaThinkRequest& think,
                                 uint32_t reasoningReserve)
     {
         switch (cfg.provider)
         {
-            case OllamaProvider::OpenAI:    return BuildOpenAIRequest(cfg, prompt, think, reasoningReserve);
+            case OllamaProvider::OpenAI:    return BuildOpenAIRequest(cfg, prompt, kind, think, reasoningReserve);
             case OllamaProvider::Anthropic: return BuildAnthropicRequest(cfg, prompt, think, reasoningReserve);
             default:                        return BuildOllamaRequest(cfg, prompt, think, reasoningReserve);
         }
@@ -321,7 +324,8 @@ namespace
     // exposes (OpenRouter: "reasoning"; DeepSeek, vLLM: "reasoning_content").
     // Content may also arrive as an array of typed parts.
     void ParseOpenAIBody(const std::string& body, std::string& outText,
-                         std::string& outThinking, std::string& outError)
+                         std::string& outThinking, std::string& outFinishReason,
+                         uint64_t& outReasoningTokens, std::string& outError)
     {
         try
         {
@@ -340,6 +344,9 @@ namespace
             }
 
             const auto& choice = parsed["choices"][0];
+            if (choice.contains("finish_reason") && choice["finish_reason"].is_string())
+                outFinishReason = choice["finish_reason"].get<std::string>();
+
             if (!choice.contains("message") || !choice["message"].is_object())
             {
                 outError = "first choice has no message";
@@ -372,6 +379,28 @@ namespace
                 {
                     outThinking = msg[key].get<std::string>();
                     break;
+                }
+            }
+
+            if (parsed.contains("usage") && parsed["usage"].is_object())
+            {
+                const auto& usage = parsed["usage"];
+                if (usage.contains("completion_tokens_details") &&
+                    usage["completion_tokens_details"].is_object())
+                {
+                    const auto& details = usage["completion_tokens_details"];
+                    if (details.contains("reasoning_tokens"))
+                    {
+                        const auto& tokens = details["reasoning_tokens"];
+                        if (tokens.is_number_unsigned())
+                            outReasoningTokens = tokens.get<uint64_t>();
+                        else if (tokens.is_number_integer())
+                        {
+                            const int64_t value = tokens.get<int64_t>();
+                            if (value > 0)
+                                outReasoningTokens = static_cast<uint64_t>(value);
+                        }
+                    }
                 }
             }
         }
@@ -479,6 +508,7 @@ namespace
 
     OllamaApiResult PerformOnce(const OllamaEndpointSettings& cfg,
                                 const std::string& prompt,
+                                OllamaRequestKind kind,
                                 const OllamaThinkRequest& think,
                                 uint32_t reasoningReserve)
     {
@@ -488,7 +518,7 @@ namespace
         // model does on its own is not something backing think off can fix.
         result.thinkUsed = think.wanted;
 
-        const nlohmann::json request = BuildRequest(cfg, prompt, think, reasoningReserve);
+        const nlohmann::json request = BuildRequest(cfg, prompt, kind, think, reasoningReserve);
 
         const auto started = std::chrono::steady_clock::now();
         OllamaHttpResult http = t_httpClient.PostEx(cfg.url, request.dump(), 0,
@@ -519,7 +549,8 @@ namespace
         switch (cfg.provider)
         {
             case OllamaProvider::OpenAI:
-                ParseOpenAIBody(http.body, result.text, result.thinking, parseError);
+                ParseOpenAIBody(http.body, result.text, result.thinking, result.finishReason,
+                                result.reasoningTokens, parseError);
                 break;
             case OllamaProvider::Anthropic:
                 ParseAnthropicBody(http.body, result.text, result.thinking, parseError);
@@ -550,6 +581,7 @@ void OllamaConfig_Publish()
     next.systemPrompt     = g_OllamaSystemPrompt;
     next.stop             = g_OllamaStop;
     next.seed             = g_OllamaSeed;
+    next.reasoningEffort  = g_OllamaReasoningEffort;
     next.numPredict       = g_OllamaNumPredict;
     next.numCtx           = g_OllamaNumCtx;
     next.numThreads       = g_OllamaNumThreads;
@@ -653,7 +685,7 @@ OllamaApiResult QueryOllama(const std::string& prompt, OllamaRequestKind kind)
     // for: a throttled provider slows replies down instead of losing them.
     auto performWithBackoff = [&](OllamaThinkRequest& req, uint32_t budget)
     {
-        OllamaApiResult r = PerformOnce(cfg, prompt, req, budget);
+        OllamaApiResult r = PerformOnce(cfg, prompt, kind, req, budget);
 
         for (uint32_t attempt = 0;
              attempt < g_RateLimitRetries && !r.ok && IsRateLimited(r.status);
@@ -678,7 +710,7 @@ OllamaApiResult QueryOllama(const std::string& prompt, OllamaRequestKind kind)
                          r.status, attempt + 1, g_RateLimitRetries, wait);
 
             std::this_thread::sleep_for(std::chrono::seconds(wait));
-            r = PerformOnce(cfg, prompt, req, budget);
+            r = PerformOnce(cfg, prompt, kind, req, budget);
         }
 
         return r;
@@ -702,7 +734,7 @@ OllamaApiResult QueryOllama(const std::string& prompt, OllamaRequestKind kind)
                     LOG_INFO("module.ollamachat",
                              "[Ollama Chat] Model '{}' wants max_completion_tokens instead of "
                              "max_tokens; switching for the rest of this session.", cfg.model);
-                r = PerformOnce(cfg, prompt, req, budget);
+                r = PerformOnce(cfg, prompt, kind, req, budget);
             }
             else if (!g_samplingRejected.load() &&
                      (lower.find("unsupported") != std::string::npos ||
@@ -718,7 +750,7 @@ OllamaApiResult QueryOllama(const std::string& prompt, OllamaRequestKind kind)
                              "[Ollama Chat] Model '{}' rejects explicit sampling parameters "
                              "(temperature/top_p/penalties); sending its defaults for the rest "
                              "of this session.", cfg.model);
-                r = PerformOnce(cfg, prompt, req, budget);
+                r = PerformOnce(cfg, prompt, kind, req, budget);
             }
         }
 
@@ -729,7 +761,7 @@ OllamaApiResult QueryOllama(const std::string& prompt, OllamaRequestKind kind)
         {
             OllamaCapability_NoteEffortLevelRejected();
             req.level.clear();
-            r = PerformOnce(cfg, prompt, req, budget);
+            r = PerformOnce(cfg, prompt, kind, req, budget);
         }
 
         return r;
@@ -744,15 +776,18 @@ OllamaApiResult QueryOllama(const std::string& prompt, OllamaRequestKind kind)
     {
         OllamaCapability_NoteThinkRejected();
         think  = OllamaThinkRequest{};
-        result = PerformOnce(cfg, prompt, think, 0);
+        result = PerformOnce(cfg, prompt, kind, think, 0);
     }
 
-    // Self-heal: HTTP 200, reasoning present, answer empty. The model spent
-    // the entire budget thinking -- it ignored think:false, or the cap was too
-    // small to cover reasoning plus a reply. Remember that this model reasons
+    // Self-heal: HTTP 200, answer empty, and reasoning text or provider
+    // metadata says reasoning exhausted the budget. The model spent the entire
+    // budget thinking -- it ignored think:false, or the cap was too small to
+    // cover reasoning plus a reply. Remember that this model reasons
     // unconditionally, re-resolve (which now yields the low effort level), and
     // retry with headroom so this message is not lost.
-    if (result.ok && result.text.empty() && !result.thinking.empty() &&
+    const bool emptyAfterReasoning = result.ok && result.text.empty() &&
+        (!result.thinking.empty() || result.reasoningTokens > 0 || result.finishReason == "length");
+    if (emptyAfterReasoning &&
         cfg.numPredict > 0 && reserve == 0 && g_ReasoningTokenReserve > 0)
     {
         if (!think.wanted)
@@ -765,13 +800,16 @@ OllamaApiResult QueryOllama(const std::string& prompt, OllamaRequestKind kind)
     // Still nothing but reasoning. Say so plainly -- this used to surface only
     // as "produced nothing usable after cleanup", which points at the wrong
     // part of the pipeline entirely.
-    if (result.ok && result.text.empty() && !result.thinking.empty())
+    if (result.ok && result.text.empty() &&
+        (!result.thinking.empty() || result.reasoningTokens > 0 || result.finishReason == "length"))
     {
         LOG_ERROR("module.ollamachat",
-                  "[Ollama Chat] Model '{}' returned {} characters of reasoning and no answer. "
+                  "[Ollama Chat] Model '{}' returned no answer after reasoning ({} visible chars, "
+                  "{} reported reasoning tokens, finish_reason='{}'). "
                   "NumPredict={} plus ReasoningTokenReserve={} was not enough to finish "
                   "reasoning and reply; raise one of them, or set NumPredict = 0.",
-                  cfg.model, result.thinking.size(), cfg.numPredict, g_ReasoningTokenReserve);
+                  cfg.model, result.thinking.size(), result.reasoningTokens, result.finishReason,
+                  cfg.numPredict, g_ReasoningTokenReserve);
     }
 
     if (result.ok)
