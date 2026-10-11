@@ -743,8 +743,8 @@ std::string ChatHandler_GetBotSpellInfo(Player* bot)
         if (bot->HasSpellCooldown(spellId))
             continue;
         
-        const char* name = spellInfo->SpellName[0];
-        if (!name || !*name)
+        std::string name = Words_SpellName(spellInfo);
+        if (name.empty())
             continue;
         
         std::string costText;
@@ -938,7 +938,7 @@ std::vector<std::string> ChatHandler_GetVisibleLocations(Player* bot, float radi
 
         const float dist = bot->GetDistance(c);
         scored.emplace_back(dist, SafeFormat("{}: {} (Level {}, HP {}/{}, {:.0f} yards)",
-                                             type, c->GetName(), c->GetLevel(),
+                                             type, Words_CreatureName(c), c->GetLevel(),
                                              c->GetHealth(), c->GetMaxHealth(), dist));
     }
 
@@ -963,13 +963,13 @@ std::vector<std::string> ChatHandler_GetVisibleLocations(Player* bot, float radi
     std::vector<std::pair<float, std::string>> goScored;
     for (GameObject* go : objects)
     {
-        if (!go || go->GetName().empty())
+        if (!go || Words_GameObjectName(go).empty())
             continue;
         if (!bot->IsWithinLOSInMap(go))
             continue;
 
         const float dist = bot->GetDistance(go);
-        goScored.emplace_back(dist, SafeFormat("{} ({:.0f} yards)", go->GetName(), dist));
+        goScored.emplace_back(dist, SafeFormat("{} ({:.0f} yards)", Words_GameObjectName(go), dist));
     }
 
     std::sort(goScored.begin(), goScored.end(),
@@ -1024,7 +1024,8 @@ std::string ChatHandler_GetCombatSummary(Player* bot)
         oss << "IN COMBAT: ";
         if (victim)
         {
-            oss << "Target: " << victim->GetName()
+            Creature* targetCreature = victim->ToCreature();
+            oss << "Target: " << (targetCreature ? Words_CreatureName(targetCreature) : victim->GetName())
                 << ", Level: " << victim->GetLevel()
                 << ", HP: " << victim->GetHealth() << "/" << victim->GetMaxHealth();
         }

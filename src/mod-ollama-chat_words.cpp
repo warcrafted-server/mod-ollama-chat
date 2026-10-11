@@ -1,10 +1,16 @@
 #include "mod-ollama-chat_words.h"
 
 #include "ChatHelper.h"
+#include "Creature.h"
 #include "DBCStores.h"
+#include "GameObject.h"
 #include "Guild.h"
+#include "ItemTemplate.h"
 #include "Log.h"
+#include "ObjectMgr.h"
 #include "PlayerbotAI.h"
+#include "QuestDef.h"
+#include "SpellInfo.h"
 
 #include <charconv>
 #include <limits>
@@ -59,6 +65,12 @@ namespace
 
         char const* english = names[LOCALE_enUS];
         return english ? english : "";
+    }
+
+    std::string LocalizedName(std::vector<std::string> const& names)
+    {
+        std::string_view localized = ObjectMgr::GetLocaleString(names, g_PromptLocale);
+        return localized.empty() ? std::string() : std::string(localized);
     }
 }
 
@@ -247,4 +259,85 @@ std::string Words_SnapshotRaceName(uint8 raceId)
         case RACE_DRAENEI:       return "Draenei";
         default:                 return "Unknown";
     }
+}
+
+std::string Words_QuestTitle(Quest const* q)
+{
+    if (!q)
+        return {};
+
+    if (!g_UsePromptLocale)
+        return q->GetTitle();
+
+    if (QuestLocale const* locale = sObjectMgr->GetQuestLocale(q->GetQuestId()))
+    {
+        std::string name = LocalizedName(locale->Title);
+        if (!name.empty())
+            return name;
+    }
+    return q->GetTitle();
+}
+
+std::string Words_ItemName(ItemTemplate const* t)
+{
+    if (!t)
+        return {};
+
+    if (!g_UsePromptLocale)
+        return t->Name1;
+
+    if (ItemLocale const* locale = sObjectMgr->GetItemLocale(t->ItemId))
+    {
+        std::string name = LocalizedName(locale->Name);
+        if (!name.empty())
+            return name;
+    }
+    return t->Name1;
+}
+
+std::string Words_CreatureName(Creature* c)
+{
+    if (!c)
+        return {};
+
+    if (!g_UsePromptLocale)
+        return c->GetName();
+
+    if (CreatureLocale const* locale = sObjectMgr->GetCreatureLocale(c->GetEntry()))
+    {
+        std::string name = LocalizedName(locale->Name);
+        if (!name.empty())
+            return name;
+    }
+    return c->GetName();
+}
+
+std::string Words_GameObjectName(GameObject* go)
+{
+    if (!go)
+        return {};
+
+    if (!g_UsePromptLocale)
+        return go->GetName();
+
+    if (GameObjectLocale const* locale = sObjectMgr->GetGameObjectLocale(go->GetEntry()))
+    {
+        std::string name = LocalizedName(locale->Name);
+        if (!name.empty())
+            return name;
+    }
+    return go->GetName();
+}
+
+std::string Words_SpellName(SpellInfo const* s)
+{
+    if (!s)
+        return {};
+
+    char const* name = g_UsePromptLocale ? s->SpellName[g_PromptLocale] : s->SpellName[0];
+    if (name && *name)
+        return name;
+
+    char const* english = s->SpellName[0];
+    return english ? english : "";
 }

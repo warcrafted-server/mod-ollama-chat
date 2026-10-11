@@ -293,7 +293,7 @@ namespace
 
         for (Creature* c : creatures)
         {
-            if (!c || c->IsPet() || c->IsTotem() || c->GetName().empty())
+            if (!c || c->IsPet() || c->IsTotem() || Words_CreatureName(c).empty())
                 continue;
 
             // NPCs with a role are worth naming specifically.
@@ -330,7 +330,7 @@ namespace
 
             Add(out, TopicCategory::World, key, list,
                 SafeFormat(PickOne(list),
-                           fmt::arg("creature_name", interesting->GetName()),
+                           fmt::arg("creature_name", Words_CreatureName(interesting)),
                            fmt::arg("creature_level", interesting->GetLevel()),
                            fmt::arg("level_delta",
                                     int32(interesting->GetLevel()) - int32(bot->GetLevel()))));
@@ -342,7 +342,7 @@ namespace
             {
                 Add(out, TopicCategory::Activity, "danger", g_EnvCommentDanger,
                     SafeFormat(PickOne(g_EnvCommentDanger),
-                               fmt::arg("creature_name", interesting->GetName()),
+                               fmt::arg("creature_name", Words_CreatureName(interesting)),
                                fmt::arg("level_delta",
                                         int32(interesting->GetLevel()) - int32(bot->GetLevel()))));
             }
@@ -359,14 +359,14 @@ namespace
             if (!g_EnvCommentNamedNpc.empty())
                 Add(out, TopicCategory::World, "named_npc", g_EnvCommentNamedNpc,
                     SafeFormat(PickOne(g_EnvCommentNamedNpc),
-                               fmt::arg("npc_name", namedNpc->GetName()),
+                               fmt::arg("npc_name", Words_CreatureName(namedNpc)),
                                fmt::arg("npc_role", role)));
 
             // The pre-existing vendor and questgiver pools stay wired up.
             if (namedNpc->IsVendor() && !g_EnvCommentVendor.empty())
                 Add(out, TopicCategory::World, "vendor", g_EnvCommentVendor,
                     SafeFormat(PickOne(g_EnvCommentVendor),
-                               fmt::arg("vendor_name", namedNpc->GetName())));
+                               fmt::arg("vendor_name", Words_CreatureName(namedNpc))));
 
             if (namedNpc->IsQuestGiver() && !g_EnvCommentQuestgiver.empty())
             {
@@ -376,7 +376,7 @@ namespace
 
                 Add(out, TopicCategory::World, "questgiver", g_EnvCommentQuestgiver,
                     SafeFormat(PickOne(g_EnvCommentQuestgiver),
-                               fmt::arg("questgiver_name", namedNpc->GetName()),
+                               fmt::arg("questgiver_name", Words_CreatureName(namedNpc)),
                                fmt::arg("quest_count", questCount)));
             }
         }
@@ -391,7 +391,7 @@ namespace
 
             std::vector<GameObject*> named;
             for (GameObject* go : objects)
-                if (go && !go->GetName().empty())
+                if (go && !Words_GameObjectName(go).empty())
                     named.push_back(go);
 
             if (!named.empty() && !g_EnvCommentGameObject.empty())
@@ -399,7 +399,7 @@ namespace
                 GameObject* go = named[PickIndex(named.size())];
                 Add(out, TopicCategory::World, "gameobject", g_EnvCommentGameObject,
                     SafeFormat(PickOne(g_EnvCommentGameObject),
-                               fmt::arg("object_name", go->GetName())));
+                               fmt::arg("object_name", Words_GameObjectName(go))));
             }
         }
 
@@ -466,7 +466,7 @@ namespace
                 objective = quest->GetDetails().empty() ? "finish what you started"
                                                         : "see it through";
 
-            active.emplace_back(quest->GetTitle(), objective);
+            active.emplace_back(Words_QuestTitle(quest), objective);
         }
 
         if (!active.empty())
@@ -516,7 +516,7 @@ namespace
                 if (item->GetTemplate())
                     Add(out, TopicCategory::Self, "equipped_item", g_EnvCommentEquippedItem,
                         SafeFormat(PickOne(g_EnvCommentEquippedItem),
-                                   fmt::arg("item_name", item->GetTemplate()->Name1)));
+                                   fmt::arg("item_name", Words_ItemName(item->GetTemplate()))));
             }
         }
 
@@ -532,8 +532,8 @@ namespace
                     continue;
                 if (info->SpellFamilyName == SPELLFAMILY_GENERIC)
                     continue;
-                const char* name = info->SpellName[0];
-                if (!name || !*name)
+                std::string name = Words_SpellName(info);
+                if (name.empty())
                     continue;
 
                 spells.emplace_back(name, info->ManaCost ? std::to_string(info->ManaCost)
@@ -576,7 +576,7 @@ namespace
             if (!bagItems.empty())
             {
                 Item* item = bagItems[PickIndex(bagItems.size())];
-                const std::string name = item->GetTemplate()->Name1;
+                const std::string name = Words_ItemName(item->GetTemplate());
 
                 if (!g_EnvCommentBagItem.empty())
                     Add(out, TopicCategory::Self, "bag_item", g_EnvCommentBagItem,

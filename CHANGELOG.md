@@ -4,6 +4,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); v
 
 ## [Sin publicar]
 
+## [0.9.0] - 2026-10-12
+
+### Cambiado
+- Con `OllamaChat.PromptLocale` configurado, los nombres de misión, objeto, criatura, objeto de juego y hechizo que entran en los prompts (eventos, temas de charla y snapshot) salen en ese idioma cuando existe traducción, y en inglés si no. Sin `PromptLocale` no cambia nada.
+
 ## [0.8.1] - 2026-10-12
 
 ### Añadido

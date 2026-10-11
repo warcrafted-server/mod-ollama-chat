@@ -367,7 +367,7 @@ ChatOnKill::ChatOnKill()
 void ChatOnKill::OnPlayerCreatureKill(Player* killer, Creature* victim)
 {
     if (killer && victim)
-        eventChatter.DispatchGameEvent(killer, g_EventTypeDefeated, victim->GetName());
+        eventChatter.DispatchGameEvent(killer, g_EventTypeDefeated, Words_CreatureName(victim));
 }
 
 void ChatOnKill::OnPlayerPVPKill(Player* killer, Player* killed)
@@ -379,7 +379,7 @@ void ChatOnKill::OnPlayerPVPKill(Player* killer, Player* killed)
 void ChatOnKill::OnPlayerCreatureKilledByPet(Player* owner, Creature* victim)
 {
     if (owner && victim)
-        eventChatter.DispatchGameEvent(owner, g_EventTypePetDefeated, victim->GetName());
+        eventChatter.DispatchGameEvent(owner, g_EventTypePetDefeated, Words_CreatureName(victim));
 }
 
 // --------------------------------------------------------------------------
@@ -395,19 +395,19 @@ void ChatOnLoot::OnPlayerStoreNewItem(Player* player, Item* item, uint32 /*count
     ItemTemplate const* tmpl = item->GetTemplate();
 
     if (tmpl->Quality >= ITEM_QUALITY_UNCOMMON)
-        eventChatter.DispatchGameEvent(player, g_EventTypeGotItem, tmpl->Name1);
+        eventChatter.DispatchGameEvent(player, g_EventTypeGotItem, Words_ItemName(tmpl));
 
     if (!player->GetGuild() || !g_EnableGuildEventChatter)
         return;
 
     if (tmpl->Quality == ITEM_QUALITY_EPIC && !g_GuildEventTypeEpicGear.empty())
     {
-        eventChatter.DispatchGameEvent(player, g_GuildEventTypeEpicGear, tmpl->Name1);
+        eventChatter.DispatchGameEvent(player, g_GuildEventTypeEpicGear, Words_ItemName(tmpl));
     }
     else if (tmpl->Quality == ITEM_QUALITY_RARE && !g_GuildEventTypeRareGear.empty())
     {
         if (tmpl->Class == ITEM_CLASS_WEAPON || tmpl->Class == ITEM_CLASS_ARMOR)
-            eventChatter.DispatchGameEvent(player, g_GuildEventTypeRareGear, tmpl->Name1);
+            eventChatter.DispatchGameEvent(player, g_GuildEventTypeRareGear, Words_ItemName(tmpl));
     }
 }
 
@@ -432,7 +432,8 @@ void ChatOnQuest::OnPlayerCompleteQuest(Player* player, Quest const* quest)
     if (!player || !quest)
         return;
 
-    eventChatter.DispatchGameEvent(player, g_EventTypeCompletedQuest, quest->GetTitle());
+    const std::string questTitle = Words_QuestTitle(quest);
+    eventChatter.DispatchGameEvent(player, g_EventTypeCompletedQuest, questTitle);
 
     if (player->GetGuild() && g_EnableGuildEventChatter &&
         !g_GuildEventTypeDungeonComplete.empty() &&
@@ -440,7 +441,7 @@ void ChatOnQuest::OnPlayerCompleteQuest(Player* player, Quest const* quest)
     {
         eventChatter.DispatchGameEvent(
             player, g_GuildEventTypeDungeonComplete,
-            SafeFormat("{} in {}", quest->GetTitle(), OllamaContinentName(player)));
+            SafeFormat("{} in {}", questTitle, OllamaContinentName(player)));
     }
 }
 
@@ -455,8 +456,12 @@ void ChatOnLearn::OnPlayerLearnSpell(Player* player, uint32 spellID)
         return;
 
     SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellID);
-    if (spellInfo && spellInfo->SpellName[0] && *spellInfo->SpellName[0])
-        eventChatter.DispatchGameEvent(player, g_EventTypeLearnedSpell, spellInfo->SpellName[0]);
+    if (spellInfo)
+    {
+        std::string spellName = Words_SpellName(spellInfo);
+        if (!spellName.empty())
+            eventChatter.DispatchGameEvent(player, g_EventTypeLearnedSpell, spellName);
+    }
 }
 
 // --------------------------------------------------------------------------

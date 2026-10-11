@@ -9,7 +9,12 @@
 #include <vector>
 
 class Guild;
+class Creature;
+class GameObject;
+struct ItemTemplate;
 class PlayerbotAI;
+class Quest;
+class SpellInfo;
 
 void Words_Configure(const std::string& male, const std::string& female,
                      const std::string& alliance, const std::string& horde,
@@ -28,5 +33,10 @@ std::string Words_ClassName(uint8 classId, PlayerbotAI* ai = nullptr, const char
 std::string Words_RaceName(uint8 raceId, PlayerbotAI* ai = nullptr, const char* fallback = nullptr);
 std::string Words_SnapshotClassName(uint8 classId);
 std::string Words_SnapshotRaceName(uint8 raceId);
+std::string Words_QuestTitle(Quest const* q);
+std::string Words_ItemName(ItemTemplate const* t);
+std::string Words_CreatureName(Creature* c);
+std::string Words_GameObjectName(GameObject* go);
+std::string Words_SpellName(SpellInfo const* s);
 
 #endif
