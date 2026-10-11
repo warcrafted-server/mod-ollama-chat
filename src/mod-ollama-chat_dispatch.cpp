@@ -7,6 +7,7 @@
 #include "mod-ollama-chat_response.h"
 #include "mod-ollama-chat_scope.h"
 #include "mod-ollama-chat_roleplay.h"
+#include "mod-ollama-chat_style.h"
 #include "mod-ollama-chat_sentiment.h"
 #include "mod-ollama-chat-utilities.h"
 #include "mod-ollama-chat_world.h"
@@ -144,6 +145,8 @@ namespace
             }
             text = std::move(filtered);
         }
+
+        text = Style_Apply(text, task.request.botGuid);
 
         if (text.empty())
         {

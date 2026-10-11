@@ -4,6 +4,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); v
 
 ## [Sin publicar]
 
+## [0.8.0] - 2026-10-12
+
+### Añadido
+- Estilo de escritura estable por bot (`OllamaChat.Style.*`): cada bot tiene hábitos propios derivados de su guid (empezar en minúscula, quitar el punto final y los `¿` `¡`, quitar tildes, abreviaturas como `q`/`tb`/`pa`, alguna errata). Se aplica en código al texto final, sin tocar enlaces de objeto ni códigos de color. Desactivado por defecto.
+
 ## [0.7.0] - 2026-10-12
 
 ### Añadido

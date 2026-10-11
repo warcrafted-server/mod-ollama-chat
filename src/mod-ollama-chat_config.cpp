@@ -12,6 +12,7 @@
 #include "mod-ollama-chat_roleplay.h"
 #include "mod-ollama-chat_response.h"
 #include "mod-ollama-chat_scope.h"
+#include "mod-ollama-chat_style.h"
 #include "mod-ollama-chat_topics.h"
 #include "mod-ollama-chat_words.h"
 #include "mod-ollama-chat-utilities.h"
@@ -962,6 +963,17 @@ void LoadOllamaChatConfig()
         std::swap(g_HumanReadMinMs, g_HumanReadMaxMs);
     if (g_HumanDistractedMinMs > g_HumanDistractedMaxMs)
         std::swap(g_HumanDistractedMinMs, g_HumanDistractedMaxMs);
+
+    Style_Configure(
+        sConfigMgr->GetOption<bool>("OllamaChat.Style.Enable", false),
+        sConfigMgr->GetOption<uint32_t>("OllamaChat.Style.LowercaseStartChance", 40),
+        sConfigMgr->GetOption<uint32_t>("OllamaChat.Style.DropFinalPeriodChance", 60),
+        sConfigMgr->GetOption<uint32_t>("OllamaChat.Style.DropOpeningMarksChance", 80),
+        sConfigMgr->GetOption<uint32_t>("OllamaChat.Style.NoAccentsChance", 20),
+        sConfigMgr->GetOption<uint32_t>("OllamaChat.Style.AbbreviationsChance", 30),
+        sConfigMgr->GetOption<uint32_t>("OllamaChat.Style.TypoPercent", 2),
+        sConfigMgr->GetOption<std::string>("OllamaChat.Style.Abbreviations",
+            "que=q|porque=xq|por qué=xq|también=tb|tambien=tb|para=pa|pero=pero|porfa=pf"));
 
     g_EventTypeDefeated           = sConfigMgr->GetOption<std::string>("OllamaChat.EventTypeDefeated", "");
     g_EventTypeDefeatedPlayer     = sConfigMgr->GetOption<std::string>("OllamaChat.EventTypeDefeatedPlayer", "");

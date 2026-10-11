@@ -639,6 +639,58 @@ OllamaChat.Human.DistractedMaxMs = 40000
 #     Default:     45000
 OllamaChat.Human.MaxDelayMs = 45000
 
+# Stable writing habits are selected per bot from its GUID. Each selected
+# habit is applied independently to about 85% of that bot's replies.
+# Example recommended settings for a Spanish-speaking server:
+#   OllamaChat.Style.Enable = 1
+#   OllamaChat.Style.LowercaseStartChance = 40
+#   OllamaChat.Style.DropFinalPeriodChance = 60
+#   OllamaChat.Style.DropOpeningMarksChance = 80
+#   OllamaChat.Style.NoAccentsChance = 20
+#   OllamaChat.Style.AbbreviationsChance = 30
+#   OllamaChat.Style.TypoPercent = 2
+#   OllamaChat.Style.Abbreviations = que=q|porque=xq|por qué=xq|también=tb|tambien=tb|para=pa|pero=pero|porfa=pf
+
+# OllamaChat.Style.Enable
+#     Description: Enables deterministic per-bot writing habits on generated replies (1 = enabled, 0 = disabled).
+#     Default:     0
+OllamaChat.Style.Enable = 0
+
+# OllamaChat.Style.LowercaseStartChance
+#     Description: Chance (0-100) that a bot has the habit of starting replies in lowercase.
+#     Default:     40
+OllamaChat.Style.LowercaseStartChance = 40
+
+# OllamaChat.Style.DropFinalPeriodChance
+#     Description: Chance (0-100) that a bot has the habit of omitting a final period.
+#     Default:     60
+OllamaChat.Style.DropFinalPeriodChance = 60
+
+# OllamaChat.Style.DropOpeningMarksChance
+#     Description: Chance (0-100) that a bot has the habit of omitting Spanish opening question and exclamation marks.
+#     Default:     80
+OllamaChat.Style.DropOpeningMarksChance = 80
+
+# OllamaChat.Style.NoAccentsChance
+#     Description: Chance (0-100) that a bot has the habit of omitting vowel accents; ñ is preserved.
+#     Default:     20
+OllamaChat.Style.NoAccentsChance = 20
+
+# OllamaChat.Style.AbbreviationsChance
+#     Description: Chance (0-100) that a bot has the habit of using configured whole-word abbreviations.
+#     Default:     30
+OllamaChat.Style.AbbreviationsChance = 30
+
+# OllamaChat.Style.TypoPercent
+#     Description: Maximum per-word typo rate (0-100) for bots assigned a typo habit; at most one typo is made per reply.
+#     Default:     2
+OllamaChat.Style.TypoPercent = 2
+
+# OllamaChat.Style.Abbreviations
+#     Description: Pipe-separated source=replacement pairs. Whole words are matched case-insensitively; capitalized words are left alone.
+#     Default:     que=q|porque=xq|por qué=xq|también=tb|tambien=tb|para=pa|pero=pero|porfa=pf
+OllamaChat.Style.Abbreviations = que=q|porque=xq|por qué=xq|también=tb|tambien=tb|para=pa|pero=pero|porfa=pf
+
 # --------------------------------------------
 # RP PERSONALITIES SYSTEM
 # --------------------------------------------
