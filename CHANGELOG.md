@@ -4,6 +4,15 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); v
 
 ## [Sin publicar]
 
+## [0.6.0] - 2026-10-12
+
+### Añadido
+- Los bots ven lo que se ha dicho en el canal, grupo o hermandad: el historial de ámbito se envía a OpenAI y Anthropic como turnos `user`/`assistant`, y a Ollama como bloque de texto al inicio del prompt. Se aplica a respuestas, charla aleatoria y charla de eventos.
+- Opciones `OllamaChat.ScopeHistory.TextHeader` y `OllamaChat.ScopeHistory.SelfLabel` para el formato en texto plano de Ollama.
+
+### Cambiado
+- Si hay historial de ámbito, se omite el historial plano por pareja bot–jugador para no duplicar contexto. Los susurros siguen usándolo.
+
 ## [0.5.0] - 2026-10-12
 
 ### Añadido

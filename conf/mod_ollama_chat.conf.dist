@@ -621,6 +621,16 @@ OllamaChat.ScopeHistory.Lines = 12
 #     Default:     600
 OllamaChat.ScopeHistory.MaxAgeSeconds = 600
 
+# OllamaChat.ScopeHistory.TextHeader
+#     Description: Header prepended to scope history in prompts sent to Ollama's text-generation API.
+#     Default:     Recent chat (oldest first):
+OllamaChat.ScopeHistory.TextHeader = "Recent chat (oldest first):"
+
+# OllamaChat.ScopeHistory.SelfLabel
+#     Description: Label for this bot's lines in the plain-text scope history sent to Ollama.
+#     Default:     You
+OllamaChat.ScopeHistory.SelfLabel = "You"
+
 # OllamaChat.ConversationHistorySaveInterval
 #     Description: The interval (in minutes) between periodic saves of conversation history from memory to the database.
 #                  Set to 0 to disable auto-saving.
@@ -2102,4 +2112,3 @@ OllamaChat.PresencePenalty = -1000
 #   Description: Discourages tokens by how often they appeared. -1000 = omit the parameter.
 #   Default: -1000
 OllamaChat.FrequencyPenalty = -1000
-

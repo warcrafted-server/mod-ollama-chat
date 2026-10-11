@@ -1,5 +1,6 @@
 #include "mod-ollama-chat_scope.h"
 
+#include "mod-ollama-chat_config.h"
 #include "mod-ollama-chat_response.h"
 
 #include <algorithm>
@@ -143,6 +144,56 @@ std::vector<ScopeLine> ScopeHistory_Get(const std::string& scopeKey)
                          return left.at < right.at;
                      });
     return result;
+}
+
+std::vector<OllamaChatTurn> ScopeHistory_BuildTurns(const std::string& scopeKey,
+                                                    uint64_t botGuid,
+                                                    uint64_t excludeLastFromGuid,
+                                                    const std::string& excludeLastText)
+{
+    std::vector<ScopeLine> lines = ScopeHistory_Get(scopeKey);
+    if (!lines.empty() && excludeLastFromGuid != 0 && !excludeLastText.empty())
+    {
+        const ScopeLine& last = lines.back();
+        const bool exactMatch = last.text == excludeLastText;
+        const bool truncatedPrefix = !last.text.empty() &&
+            last.text.size() < excludeLastText.size() &&
+            excludeLastText.compare(0, last.text.size(), last.text) == 0;
+        if (last.speakerGuid == excludeLastFromGuid && (exactMatch || truncatedPrefix))
+            lines.pop_back();
+    }
+
+    std::vector<OllamaChatTurn> turns;
+    turns.reserve(lines.size());
+    for (const ScopeLine& line : lines)
+    {
+        if (line.speakerGuid == botGuid)
+            turns.push_back({ true, line.text });
+        else
+            turns.push_back({ false, line.speaker + ": " + line.text });
+    }
+
+    return turns;
+}
+
+std::string ScopeHistory_RenderText(const std::vector<OllamaChatTurn>& turns)
+{
+    if (turns.empty())
+        return {};
+
+    std::string text;
+    if (!g_ScopeHistoryTextHeader.empty())
+        text = g_ScopeHistoryTextHeader + "\n";
+
+    for (const OllamaChatTurn& turn : turns)
+    {
+        if (turn.assistant)
+            text += g_ScopeHistorySelfLabel + ": ";
+        text += turn.content + "\n";
+    }
+
+    text += "\n";
+    return text;
 }
 
 void ScopeHistory_Clear()

@@ -1714,9 +1714,21 @@ void PlayerBotChatHandler::ProcessChat(Player* player, uint32_t /*type*/, uint32
             continue;
         }
 
-        std::string prompt = GenerateBotPrompt(bot, msg, player);
+        std::vector<OllamaChatTurn> scopeHistory;
+        if (sourceLocal != SRC_WHISPER_LOCAL)
+        {
+            scopeHistory = ScopeHistory_BuildTurns(scopeKey, bot->GetGUID().GetRawValue(),
+                                                   senderGuid, msg);
+        }
+        const bool renderScopeHistoryInPrompt = !scopeHistory.empty() &&
+            OllamaConfig_Snapshot().provider == OllamaProvider::Ollama;
+
+        std::string prompt = GenerateBotPrompt(bot, msg, player, !scopeHistory.empty());
         if (prompt.empty())
             continue;
+
+        if (renderScopeHistoryInPrompt)
+            prompt = ScopeHistory_RenderText(scopeHistory) + prompt;
 
         OllamaChatRequest request;
         request.botGuid     = bot->GetGUID().GetRawValue();
@@ -1728,6 +1740,8 @@ void PlayerBotChatHandler::ProcessChat(Player* player, uint32_t /*type*/, uint32
         request.directAddress = directAddress;
         request.scopeKey    = scopeKey;
         request.prompt      = std::move(prompt);
+        if (!scopeHistory.empty() && !renderScopeHistoryInPrompt)
+            request.history = std::move(scopeHistory);
         request.botName     = bot->GetName();
         request.originMessage = msg;
         request.kind = (g_RoleplayEnable && g_RoleplayStrictness >= 1)
@@ -1873,7 +1887,8 @@ static bool IsBotEligibleForChatChannelLocal(Player* bot, Player* player, ChatCh
     }
 }
 
-std::string GenerateBotPrompt(Player* bot, std::string playerMessage, Player* player)
+std::string GenerateBotPrompt(Player* bot, std::string playerMessage, Player* player,
+                              bool omitPairChatHistory)
 {  
     if (!bot || !player) {
         return "";
@@ -1927,7 +1942,9 @@ std::string GenerateBotPrompt(Player* bot, std::string playerMessage, Player* pl
     uint32_t playerGold             = player->GetMoney() / 10000;
     float playerDistance            = player->IsInWorld() && bot->IsInWorld() ? player->GetDistance(bot) : -1.0f;
 
-    std::string chatHistory         = GetBotHistoryPrompt(botGuid, playerGuid, playerMessage);
+    std::string chatHistory         = omitPairChatHistory
+                                         ? std::string()
+                                         : GetBotHistoryPrompt(botGuid, playerGuid, playerMessage);
     std::string sentimentInfo       = GetSentimentPromptAddition(bot, player);
 
     // Retrieve RAG information if enabled

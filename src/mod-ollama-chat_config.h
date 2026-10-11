@@ -111,6 +111,8 @@ extern uint32_t    g_MaxRandomInterval;
 // --------------------------------------------
 extern uint32_t    g_MaxConversationHistory;
 extern uint32_t    g_ConversationHistorySaveInterval;
+extern std::string g_ScopeHistoryTextHeader;
+extern std::string g_ScopeHistorySelfLabel;
 
 // --------------------------------------------
 // Prompt Templates

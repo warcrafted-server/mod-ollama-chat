@@ -1,10 +1,12 @@
 #include "mod-ollama-chat_random.h"
 #include "mod-ollama-chat_config.h"
+#include "mod-ollama-chat_api.h"
 #include "mod-ollama-chat_dispatch.h"
 #include "mod-ollama-chat_governor.h"
 #include "mod-ollama-chat_handler.h"
 #include "mod-ollama-chat_personality.h"
 #include "mod-ollama-chat_roleplay.h"
+#include "mod-ollama-chat_scope.h"
 #include "mod-ollama-chat_sentiment.h"
 #include "mod-ollama-chat_memory.h"
 #include "mod-ollama-chat_topics.h"
@@ -371,12 +373,20 @@ void OllamaBotRandomChatter::HandleRandomChatter()
             continue;
         }
 
+        std::vector<OllamaChatTurn> scopeHistory =
+            ScopeHistory_BuildTurns(scopeKey, rawGuid, 0, "");
+        const bool renderScopeHistoryInPrompt = !scopeHistory.empty() &&
+            OllamaConfig_Snapshot().provider == OllamaProvider::Ollama;
+
         std::string prompt = BuildRandomChatterPrompt(bot, topic.text);
         if (prompt.empty())
         {
             reschedule();
             continue;
         }
+
+        if (renderScopeHistoryInPrompt)
+            prompt = ScopeHistory_RenderText(scopeHistory) + prompt;
 
         OllamaChatRequest request;
         request.botGuid     = rawGuid;
@@ -387,6 +397,8 @@ void OllamaBotRandomChatter::HandleRandomChatter()
         request.chainDepth  = 0;
         request.scopeKey    = scopeKey;
         request.prompt      = std::move(prompt);
+        if (!scopeHistory.empty() && !renderScopeHistoryInPrompt)
+            request.history = std::move(scopeHistory);
         request.botName     = bot->GetName();
         request.kind        = OllamaRequestKind::RandomChatter;
         request.triggerBotReplies = true;

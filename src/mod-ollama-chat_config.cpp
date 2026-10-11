@@ -276,6 +276,8 @@ uint32_t    g_MaxRandomInterval               = 180;
 // --------------------------------------------
 uint32_t    g_MaxConversationHistory          = 5;
 uint32_t    g_ConversationHistorySaveInterval = 10;
+std::string g_ScopeHistoryTextHeader          = "Recent chat (oldest first):";
+std::string g_ScopeHistorySelfLabel            = "You";
 
 // --------------------------------------------
 // Prompt Templates
@@ -728,6 +730,8 @@ void LoadOllamaChatConfig()
 
     g_MaxConversationHistory          = sConfigMgr->GetOption<uint32_t>("OllamaChat.MaxConversationHistory", 5);
     g_ConversationHistorySaveInterval = sConfigMgr->GetOption<uint32_t>("OllamaChat.ConversationHistorySaveInterval", 10);
+    g_ScopeHistoryTextHeader          = sConfigMgr->GetOption<std::string>("OllamaChat.ScopeHistory.TextHeader", "Recent chat (oldest first):");
+    g_ScopeHistorySelfLabel           = sConfigMgr->GetOption<std::string>("OllamaChat.ScopeHistory.SelfLabel", "You");
     ScopeHistory_Configure(
         sConfigMgr->GetOption<bool>("OllamaChat.ScopeHistory.Enable", true),
         sConfigMgr->GetOption<uint32_t>("OllamaChat.ScopeHistory.Lines", 12),

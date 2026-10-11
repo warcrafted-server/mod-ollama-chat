@@ -1,5 +1,6 @@
 #include "mod-ollama-chat_events.h"
 #include "mod-ollama-chat_config.h"
+#include "mod-ollama-chat_api.h"
 #include "mod-ollama-chat_world.h"
 #include "mod-ollama-chat_expression.h"
 #include "mod-ollama-chat_dispatch.h"
@@ -9,6 +10,7 @@
 #include "mod-ollama-chat_personality.h"
 #include "mod-ollama-chat_roleplay.h"
 #include "mod-ollama-chat_sentiment.h"
+#include "mod-ollama-chat_scope.h"
 #include "mod-ollama-chat_topics.h"
 #include "mod-ollama-chat_words.h"
 #include "mod-ollama-chat-utilities.h"
@@ -261,12 +263,20 @@ void OllamaBotEventChatter::DispatchGameEvent(Player* source, std::string type, 
         if (!Governor_CanSend(bot->GetGUID(), scopeKey))
             continue;
 
+        std::vector<OllamaChatTurn> scopeHistory = ScopeHistory_BuildTurns(
+            scopeKey, bot->GetGUID().GetRawValue(), 0, "");
+        const bool renderScopeHistoryInPrompt = !scopeHistory.empty() &&
+            OllamaConfig_Snapshot().provider == OllamaProvider::Ollama;
+
         // Built here, on the world thread. The old code built the whole prompt
         // inside the worker, reading area, zone, spec and guild off-thread.
         std::string prompt = BuildPrompt(bot, g_EventChatterPromptTemplate, type, detail,
                                          source->GetName());
         if (prompt.empty())
             continue;
+
+        if (renderScopeHistoryInPrompt)
+            prompt = ScopeHistory_RenderText(scopeHistory) + prompt;
 
         OllamaChatRequest request;
         request.botGuid     = bot->GetGUID().GetRawValue();
@@ -275,6 +285,8 @@ void OllamaBotEventChatter::DispatchGameEvent(Player* source, std::string type, 
         request.chainDepth  = 0;
         request.scopeKey    = scopeKey;
         request.prompt      = std::move(prompt);
+        if (!scopeHistory.empty() && !renderScopeHistoryInPrompt)
+            request.history = std::move(scopeHistory);
         request.botName     = bot->GetName();
         request.kind        = OllamaRequestKind::EventChatter;
         request.triggerBotReplies = true;
