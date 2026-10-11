@@ -64,3 +64,5 @@ compile_commands.json
 Thumbs.db
 
 .vscode/
+agentrelay.config.json
+.agentrelay/
