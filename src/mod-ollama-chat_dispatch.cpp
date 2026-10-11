@@ -5,6 +5,7 @@
 #include "mod-ollama-chat_governor.h"
 #include "mod-ollama-chat_memory.h"
 #include "mod-ollama-chat_response.h"
+#include "mod-ollama-chat_scope.h"
 #include "mod-ollama-chat_roleplay.h"
 #include "mod-ollama-chat_sentiment.h"
 #include "mod-ollama-chat-utilities.h"
@@ -379,6 +380,10 @@ namespace
         }
 
         Governor_RecordUtterance(botGuid, c.request.scopeKey, c.text);
+        if (c.request.source != SRC_WHISPER_LOCAL && !c.request.scopeKey.empty())
+        {
+            ScopeHistory_Record(c.request.scopeKey, botGuid.GetRawValue(), bot->GetName(), true, c.text);
+        }
         ++g_totalDelivered;
 
         // This bot is now in a conversation with whoever it just answered, so

@@ -606,6 +606,21 @@ OllamaChat.EnableChatHistory = 1
 #     Default:     5
 OllamaChat.MaxConversationHistory = 5
 
+# OllamaChat.ScopeHistory.Enable
+#     Description: Enables or disables the shared conversation history for each chat scope.
+#     Default:     1 (true)
+OllamaChat.ScopeHistory.Enable = 1
+
+# OllamaChat.ScopeHistory.Lines
+#     Description: Maximum number of recent speaker lines retained for each chat scope.
+#     Default:     12
+OllamaChat.ScopeHistory.Lines = 12
+
+# OllamaChat.ScopeHistory.MaxAgeSeconds
+#     Description: Maximum age in seconds for a line to remain in a chat scope's history.
+#     Default:     600
+OllamaChat.ScopeHistory.MaxAgeSeconds = 600
+
 # OllamaChat.ConversationHistorySaveInterval
 #     Description: The interval (in minutes) between periodic saves of conversation history from memory to the database.
 #                  Set to 0 to disable auto-saving.

@@ -11,6 +11,7 @@
 #include "mod-ollama-chat_memory.h"
 #include "mod-ollama-chat_roleplay.h"
 #include "mod-ollama-chat_response.h"
+#include "mod-ollama-chat_scope.h"
 #include "mod-ollama-chat_topics.h"
 #include "mod-ollama-chat_words.h"
 #include "mod-ollama-chat-utilities.h"
@@ -727,6 +728,10 @@ void LoadOllamaChatConfig()
 
     g_MaxConversationHistory          = sConfigMgr->GetOption<uint32_t>("OllamaChat.MaxConversationHistory", 5);
     g_ConversationHistorySaveInterval = sConfigMgr->GetOption<uint32_t>("OllamaChat.ConversationHistorySaveInterval", 10);
+    ScopeHistory_Configure(
+        sConfigMgr->GetOption<bool>("OllamaChat.ScopeHistory.Enable", true),
+        sConfigMgr->GetOption<uint32_t>("OllamaChat.ScopeHistory.Lines", 12),
+        sConfigMgr->GetOption<uint32_t>("OllamaChat.ScopeHistory.MaxAgeSeconds", 600));
 
     g_ChatHistoryHeaderTemplate       = sConfigMgr->GetOption<std::string>("OllamaChat.ChatHistoryHeaderTemplate", "");
     g_ChatHistoryLineTemplate         = sConfigMgr->GetOption<std::string>("OllamaChat.ChatHistoryLineTemplate", "");

@@ -36,6 +36,7 @@
 #include "mod-ollama-chat_dispatch.h"
 #include "mod-ollama-chat_governor.h"
 #include "mod-ollama-chat_response.h"
+#include "mod-ollama-chat_scope.h"
 #include "mod-ollama-chat_capability.h"
 #include "mod-ollama-chat_expression.h"
 #include "mod-ollama-chat_roleplay.h"
@@ -1165,6 +1166,15 @@ void PlayerBotChatHandler::ProcessChat(Player* player, uint32_t /*type*/, uint32
     {
         // A real player spoke here. This timestamp is what lets bots keep
         // talking to each other for a while afterwards.
+        const size_t historyStart = msg.find_first_not_of(" \t\r\n");
+        const bool historyCommand = historyStart != std::string::npos &&
+            (msg[historyStart] == '.' || msg[historyStart] == '@');
+        if (sourceLocal != SRC_WHISPER_LOCAL && !scopeKey.empty() && !historyCommand)
+        {
+            ScopeHistory_Record(scopeKey, player->GetGUID().GetRawValue(),
+                                player->GetName(), false, msg);
+        }
+
         Governor_NoteHumanMessage(scopeKey);
     }
     else

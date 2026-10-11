@@ -4,6 +4,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); v
 
 ## [Sin publicar]
 
+## [0.5.0] - 2026-10-12
+
+### Añadido
+- Historial de conversación compartido por ámbito (canal, grupo, hermandad, decir): guarda lo que dicen humanos y bots en cada sitio. Opciones `OllamaChat.ScopeHistory.Enable`, `.Lines` y `.MaxAgeSeconds`. De momento solo se registra; se enviará al modelo en la siguiente versión.
+
 ## [0.4.0] - 2026-10-12
 
 ### Añadido
