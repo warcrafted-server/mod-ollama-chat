@@ -98,6 +98,65 @@ static size_t OllamaFindBotNameMention(const std::string& msg, const std::string
     return std::string::npos;
 }
 
+static bool OllamaIsQuestionMessage(const std::string& msg)
+{
+    if (msg.find('?') != std::string::npos)
+        return true;
+
+    // Normalize ASCII and the accented vowels used by the Spanish question
+    // words below, so sentence case and all-caps messages both match.
+    std::string lower;
+    lower.reserve(msg.size());
+    for (size_t i = 0; i < msg.size(); ++i)
+    {
+        const unsigned char c = static_cast<unsigned char>(msg[i]);
+        if (c == 0xC3 && i + 1 < msg.size())
+        {
+            const unsigned char accent = static_cast<unsigned char>(msg[i + 1]);
+            if (accent == 0x81 || accent == 0x89 || accent == 0x8D ||
+                accent == 0x93 || accent == 0x9A)
+            {
+                lower.push_back(msg[i]);
+                lower.push_back(static_cast<char>(accent + 0x20));
+                ++i;
+                continue;
+            }
+        }
+
+        lower.push_back(c < 0x80 ? static_cast<char>(std::tolower(c)) : msg[i]);
+    }
+
+    const size_t start = lower.find_first_not_of(" \t\r\n\f\v");
+    if (start == std::string::npos)
+        return false;
+
+    size_t wordStart = start;
+    if (lower.compare(wordStart, 2, "¿") == 0)
+    {
+        wordStart += 2;
+        const size_t afterPunctuation = lower.find_first_not_of(" \t\r\n\f\v", wordStart);
+        if (afterPunctuation == std::string::npos)
+            return false;
+        wordStart = afterPunctuation;
+    }
+
+    static const char* const questionWords[] = {
+        "qué", "que", "quién", "quien", "cómo", "como", "cuándo", "cuando",
+        "dónde", "donde", "por qué", "why", "how", "what", "where", "who"
+    };
+
+    for (const char* word : questionWords)
+    {
+        const size_t length = std::char_traits<char>::length(word);
+        if (lower.compare(wordStart, length, word) == 0 &&
+            (wordStart + length == lower.size() ||
+             !std::isalnum(static_cast<unsigned char>(lower[wordStart + length]))))
+            return true;
+    }
+
+    return false;
+}
+
 // Is this line aimed at this bot in particular, rather than said to the room?
 //
 // Direct address skips the pacing cooldowns in the governor. Those exist to
@@ -1528,6 +1587,11 @@ void PlayerBotChatHandler::ProcessChat(Player* player, uint32_t /*type*/, uint32
         return;
     
     std::vector<Player*> finalCandidates;
+    std::vector<Player*> addressedBots;
+    const bool humanPublicMessage = !senderIsBot &&
+        (sourceLocal == SRC_GENERAL_LOCAL || sourceLocal == SRC_SAY_LOCAL ||
+         sourceLocal == SRC_YELL_LOCAL || sourceLocal == SRC_GUILD_LOCAL ||
+         sourceLocal == SRC_OFFICER_LOCAL);
     
     // For whispers, handle directly - there should only be one receiver bot
     if (sourceLocal == SRC_WHISPER_LOCAL)
@@ -1604,6 +1668,38 @@ void PlayerBotChatHandler::ProcessChat(Player* player, uint32_t /*type*/, uint32
         }
         else
         {
+            // Resolve direct-address status on the world thread before the
+            // once-per-message gate and per-bot probability rolls.
+            if (humanPublicMessage)
+            {
+                for (Player* bot : candidateBots)
+                {
+                    if (!bot || (g_DisableRepliesInCombat && bot->IsInCombat()) ||
+                        ((sourceLocal == SRC_SAY_LOCAL || sourceLocal == SRC_YELL_LOCAL) &&
+                         Roleplay_IsLanguageBarrier(player, bot)))
+                        continue;
+
+                    if (OllamaIsDirectAddress(bot, player, sourceLocal, trimmedMsg, senderIsBot, scopeKey))
+                        addressedBots.push_back(bot);
+                }
+            }
+
+            bool humanChannelGatePassed = true;
+            if (humanPublicMessage && !candidateBots.empty())
+            {
+                const bool isQuestion = OllamaIsQuestionMessage(trimmedMsg);
+                const uint32_t gateChance = isQuestion
+                    ? std::max(g_HumanChannelReplyChance, g_HumanChannelQuestionChance)
+                    : g_HumanChannelReplyChance;
+                if (gateChance < 100)
+                    humanChannelGatePassed = urand(0, 99) < gateChance;
+
+                if (!humanChannelGatePassed && addressedBots.empty() && g_DebugEnabled)
+                    LOG_INFO("module.ollamachat",
+                             "[Ollama Chat] Human {} message left unanswered by channel reply gate ({}% chance)",
+                             ChatChannelSourceLocalStr[sourceLocal], gateChance);
+            }
+
             for (Player* bot : candidateBots)
             {
                 if (g_DisableRepliesInCombat && bot->IsInCombat())
@@ -1627,6 +1723,9 @@ void PlayerBotChatHandler::ProcessChat(Player* player, uint32_t /*type*/, uint32
                 // on whether to acknowledge your next sentence.
                 const bool botIsAddressed =
                     OllamaIsDirectAddress(bot, player, sourceLocal, trimmedMsg, senderIsBot, scopeKey);
+                if (humanPublicMessage && !humanChannelGatePassed && !botIsAddressed)
+                    continue;
+
                 const uint32_t botChance = botIsAddressed
                                                ? std::max(chance, g_DirectAddressReplyChance)
                                                : chance;
@@ -1665,6 +1764,28 @@ void PlayerBotChatHandler::ProcessChat(Player* player, uint32_t /*type*/, uint32
         return;
     }
     
+    if (humanPublicMessage && g_HumanSecondReplyChance < 100 && finalCandidates.size() > 1)
+    {
+        std::random_device rd;
+        std::mt19937 g(rd());
+        std::shuffle(finalCandidates.begin(), finalCandidates.end(), g);
+
+        std::vector<Player*> retainedCandidates;
+        retainedCandidates.reserve(finalCandidates.size());
+        retainedCandidates.push_back(finalCandidates.front());
+        for (size_t i = 1; i < finalCandidates.size(); ++i)
+        {
+            Player* bot = finalCandidates[i];
+            const bool botIsAddressed = std::find(addressedBots.begin(), addressedBots.end(), bot) != addressedBots.end();
+            if (botIsAddressed || urand(0, 99) < g_HumanSecondReplyChance)
+                retainedCandidates.push_back(bot);
+            else if (g_DebugEnabled)
+                LOG_INFO("module.ollamachat", "[Ollama Chat] Bot {} removed by human second-reply chance ({}%)",
+                         bot->GetName(), g_HumanSecondReplyChance);
+        }
+        finalCandidates = std::move(retainedCandidates);
+    }
+
     if (finalCandidates.size() > g_MaxBotsToPick)
     {
         std::random_device rd;

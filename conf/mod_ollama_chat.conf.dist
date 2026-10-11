@@ -378,6 +378,27 @@ OllamaChat.PlayerReplyChance.Guild = 70
 #     Default:     5
 OllamaChat.BotReplyChance.Guild = 5
 
+# OllamaChat.Human.ChannelReplyChance
+#     Description: Once-per-message chance (0-100) that a human message in a public channel, Say/Yell, or Guild/Officer chat gets any bot reply.
+#                  For questions, the higher of this value and ChannelQuestionChance is used. Directly addressed bots bypass this gate.
+#                  Suggested human-like value: 45.
+#     Default:     100 (preserves the existing per-bot reply behavior)
+OllamaChat.Human.ChannelReplyChance = 100
+
+# OllamaChat.Human.ChannelQuestionChance
+#     Description: Once-per-message chance (0-100) for a human question in a public channel, Say/Yell, or Guild/Officer chat to get any bot reply.
+#                  A question contains '?' or starts with a common interrogative word (Spanish or English). The higher channel chance wins.
+#                  Suggested human-like value: 70.
+#     Default:     100 (preserves the existing per-bot reply behavior)
+OllamaChat.Human.ChannelQuestionChance = 100
+
+# OllamaChat.Human.SecondReplyChance
+#     Description: For human public messages with multiple bot candidates, chance (0-100) that each bot beyond the first is retained.
+#                  The first candidate after shuffling and directly addressed bots are always retained. Does not apply to Party/Raid or whispers.
+#                  Suggested human-like value: 15.
+#     Default:     100 (preserves the existing multi-bot behavior)
+OllamaChat.Human.SecondReplyChance = 100
+
 # OllamaChat.EnableWhisperReplies
 #     Description: Enable or disable bot responses to whisper messages.
 #                  When set to 0 (false), bots will not reply to any whispers.

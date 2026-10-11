@@ -33,6 +33,10 @@ extern uint32_t   g_BotReplyChance_Party;
 extern uint32_t   g_PlayerReplyChance_Guild;
 extern uint32_t   g_BotReplyChance_Guild;
 
+extern uint32_t   g_HumanChannelReplyChance;
+extern uint32_t   g_HumanChannelQuestionChance;
+extern uint32_t   g_HumanSecondReplyChance;
+
 extern uint32_t   g_MaxBotsToPick;
 extern uint32_t   g_RandomChatterBotCommentChance;
 extern uint32_t   g_RandomChatterMaxBotsPerPlayer;
