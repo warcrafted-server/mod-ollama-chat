@@ -42,6 +42,7 @@
 #include "mod-ollama-chat_world.h"
 #include "mod-ollama-chat_memory.h"
 #include "mod-ollama-chat_topics.h"
+#include "mod-ollama-chat_words.h"
 #include "mod-ollama-chat_random.h"
 #include <iomanip>
 #include "SpellMgr.h"
@@ -163,44 +164,6 @@ namespace
         WorldObject const* _obj;
         float              _range;
     };
-}
-
-// Helper function to format class name for any player
-static std::string FormatPlayerClass(uint8_t classId)
-{
-    switch (classId)
-    {
-        case CLASS_WARRIOR:      return "Warrior";
-        case CLASS_PALADIN:      return "Paladin";
-        case CLASS_HUNTER:       return "Hunter";
-        case CLASS_ROGUE:        return "Rogue";
-        case CLASS_PRIEST:       return "Priest";
-        case CLASS_DEATH_KNIGHT: return "Death Knight";
-        case CLASS_SHAMAN:       return "Shaman";
-        case CLASS_MAGE:         return "Mage";
-        case CLASS_WARLOCK:      return "Warlock";
-        case CLASS_DRUID:        return "Druid";
-        default:                 return "Unknown";
-    }
-}
-
-// Helper function to format race name for any player
-static std::string FormatPlayerRace(uint8_t raceId)
-{
-    switch (raceId)
-    {
-        case RACE_HUMAN:         return "Human";
-        case RACE_ORC:           return "Orc";
-        case RACE_DWARF:         return "Dwarf";
-        case RACE_NIGHTELF:      return "Night Elf";
-        case RACE_UNDEAD_PLAYER: return "Undead";
-        case RACE_TAUREN:        return "Tauren";
-        case RACE_GNOME:         return "Gnome";
-        case RACE_TROLL:         return "Troll";
-        case RACE_BLOODELF:      return "Blood Elf";
-        case RACE_DRAENEI:       return "Draenei";
-        default:                 return "Unknown";
-    }
 }
 
 const char* ChatChannelSourceLocalStr[] =
@@ -683,7 +646,7 @@ std::string GetBotHistoryPrompt(uint64_t botGuid, uint64_t playerGuid, std::stri
         return result;
 
     Player* player = ObjectAccessor::FindPlayer(ObjectGuid(playerGuid));
-    std::string playerName = player ? player->GetName() : "The player";
+    std::string playerName = player ? player->GetName() : Words_ThePlayer();
 
     result += SafeFormat(g_ChatHistoryHeaderTemplate, fmt::arg("player_name", playerName));
 
@@ -822,8 +785,8 @@ std::vector<std::string> ChatHandler_GetGroupStatus(Player* bot)
                             ", Level: " + std::to_string(attacker->GetLevel()) + ", HP: " + std::to_string(attacker->GetHealth()) +
                             "/" + std::to_string(attacker->GetMaxHealth()) + ")]";
         }
-        std::string className = FormatPlayerClass(member->getClass());
-        std::string raceName = FormatPlayerRace(member->getRace());
+        std::string className = Words_SnapshotClassName(member->getClass());
+        std::string raceName = Words_SnapshotRaceName(member->getRace());
         info.push_back(
             member->GetName() +
             " (Level: " + std::to_string(member->GetLevel()) +
@@ -862,8 +825,8 @@ std::vector<std::string> ChatHandler_GetVisiblePlayers(Player* bot, float radius
         scored.emplace_back(dist, SafeFormat(
             "Player: {} (Level {}, {} {}, {}, {:.0f} yards)",
             player->GetName(), player->GetLevel(),
-            FormatPlayerRace(player->getRace()), FormatPlayerClass(player->getClass()),
-            player->GetTeamId() == TEAM_ALLIANCE ? "Alliance" : "Horde", dist));
+            Words_SnapshotRaceName(player->getRace()), Words_SnapshotClassName(player->getClass()),
+            Words_Faction(player->GetTeamId()), dist));
     }
 
     std::sort(scored.begin(), scored.end(),
@@ -1932,25 +1895,25 @@ std::string GenerateBotPrompt(Player* bot, std::string playerMessage, Player* pl
     std::string botAreaName         = botCurrentArea ? botAI->GetLocalizedAreaName(botCurrentArea): "UnknownArea";
     std::string botZoneName         = botCurrentZone ? botAI->GetLocalizedAreaName(botCurrentZone): "UnknownZone";
     std::string botMapName          = OllamaContinentName(bot);
-    std::string botClass            = botAI->GetChatHelper()->FormatClass(bot->getClass());
-    std::string botRace             = botAI->GetChatHelper()->FormatRace(bot->getRace());
+    std::string botClass            = Words_ClassName(bot->getClass());
+    std::string botRace             = Words_RaceName(bot->getRace());
     std::string botRole             = CleanRoleForPrompt(ChatHelper::FormatClass(bot, AiFactory::GetPlayerSpecTab(bot)));
-    std::string botGender           = (botGenderByte == 0 ? "Male" : "Female");
-    std::string botFaction          = (bot->GetTeamId() == TEAM_ALLIANCE ? "Alliance" : "Horde");
-    std::string botGuild            = (bot->GetGuild() ? bot->GetGuild()->GetName() : "No Guild");
-    std::string botGroupStatus      = (bot->GetGroup() ? "In a group" : "Solo");
+    std::string botGender           = Words_Gender(botGenderByte);
+    std::string botFaction          = Words_Faction(bot->GetTeamId());
+    std::string botGuild            = Words_GuildOrNone(bot->GetGuild());
+    std::string botGroupStatus      = Words_GroupStatus(bot->GetGroup() != nullptr);
     uint32_t botGold                = bot->GetMoney() / 10000;
 
     std::string playerName          = player->GetName();
     uint32_t playerLevel            = player->GetLevel();
-    std::string playerClass         = botAI->GetChatHelper()->FormatClass(player->getClass());
-    std::string playerRace          = botAI->GetChatHelper()->FormatRace(player->getRace());
+    std::string playerClass         = Words_ClassName(player->getClass());
+    std::string playerRace          = Words_RaceName(player->getRace());
     std::string playerRole          = CleanRoleForPrompt(ChatHelper::FormatClass(player, AiFactory::GetPlayerSpecTab(player)));
     uint8_t playerGenderByte        = player->getGender();
-    std::string playerGender        = (playerGenderByte == 0 ? "Male" : "Female");
-    std::string playerFaction       = (player->GetTeamId() == TEAM_ALLIANCE ? "Alliance" : "Horde");
-    std::string playerGuild         = (player->GetGuild() ? player->GetGuild()->GetName() : "No Guild");
-    std::string playerGroupStatus   = (player->GetGroup() ? "In a group" : "Solo");
+    std::string playerGender        = Words_Gender(playerGenderByte);
+    std::string playerFaction       = Words_Faction(player->GetTeamId());
+    std::string playerGuild         = Words_GuildOrNone(player->GetGuild());
+    std::string playerGroupStatus   = Words_GroupStatus(player->GetGroup() != nullptr);
     uint32_t playerGold             = player->GetMoney() / 10000;
     float playerDistance            = player->IsInWorld() && bot->IsInWorld() ? player->GetDistance(bot) : -1.0f;
 
@@ -2065,13 +2028,13 @@ std::string BuildEmoteReactionPrompt(Player* bot, Player* player, uint32_t textE
         g_EmoteReactionPromptTemplate,
         fmt::arg("bot_name", bot->GetName()),
         fmt::arg("bot_level", bot->GetLevel()),
-        fmt::arg("bot_class", botAI->GetChatHelper()->FormatClass(bot->getClass())),
-        fmt::arg("bot_race", botAI->GetChatHelper()->FormatRace(bot->getRace())),
+        fmt::arg("bot_class", Words_ClassName(bot->getClass())),
+        fmt::arg("bot_race", Words_RaceName(bot->getRace())),
         fmt::arg("bot_personality", personalityPrompt),
         fmt::arg("bot_personality_name", personality),
         fmt::arg("player_name", player->GetName()),
-        fmt::arg("player_class", botAI->GetChatHelper()->FormatClass(player->getClass())),
-        fmt::arg("player_race", botAI->GetChatHelper()->FormatRace(player->getRace())),
+        fmt::arg("player_class", Words_ClassName(player->getClass())),
+        fmt::arg("player_race", Words_RaceName(player->getRace())),
         fmt::arg("emote_name", emoteName));
 
     if (g_RoleplayEnable)

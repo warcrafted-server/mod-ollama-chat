@@ -3,6 +3,7 @@
 #include "mod-ollama-chat_roleplay.h"
 #include "mod-ollama-chat_world.h"
 #include "mod-ollama-chat-utilities.h"
+#include "mod-ollama-chat_words.h"
 
 #include "Bag.h"
 #include "CellImpl.h"
@@ -128,17 +129,13 @@ namespace
     std::string ClassName(Player* p)
     {
         PlayerbotAI* ai = PlayerbotsMgr::instance().GetPlayerbotAI(p);
-        if (ai && ai->GetChatHelper())
-            return ai->GetChatHelper()->FormatClass(p->getClass());
-        return "adventurer";
+        return Words_ClassName(p->getClass(), ai, "adventurer");
     }
 
     std::string RaceName(Player* p)
     {
         PlayerbotAI* ai = PlayerbotsMgr::instance().GetPlayerbotAI(p);
-        if (ai && ai->GetChatHelper())
-            return ai->GetChatHelper()->FormatRace(p->getRace());
-        return "traveller";
+        return Words_RaceName(p->getRace(), ai, "traveller");
     }
 
     std::string TimeOfDayText()

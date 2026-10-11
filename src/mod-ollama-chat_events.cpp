@@ -10,6 +10,7 @@
 #include "mod-ollama-chat_roleplay.h"
 #include "mod-ollama-chat_sentiment.h"
 #include "mod-ollama-chat_topics.h"
+#include "mod-ollama-chat_words.h"
 #include "mod-ollama-chat-utilities.h"
 
 #include "AchievementMgr.h"
@@ -318,11 +319,11 @@ std::string OllamaBotEventChatter::BuildPrompt(Player* bot, std::string promptTe
         promptTemplate,
         fmt::arg("bot_name", bot->GetName()),
         fmt::arg("bot_level", bot->GetLevel()),
-        fmt::arg("bot_class", ai->GetChatHelper()->FormatClass(bot->getClass())),
-        fmt::arg("bot_race", ai->GetChatHelper()->FormatRace(bot->getRace())),
-        fmt::arg("bot_gender", bot->getGender() == GENDER_MALE ? "Male" : "Female"),
+        fmt::arg("bot_class", Words_ClassName(bot->getClass())),
+        fmt::arg("bot_race", Words_RaceName(bot->getRace())),
+        fmt::arg("bot_gender", Words_Gender(bot->getGender())),
         fmt::arg("bot_role", CleanRoleForPrompt(ChatHelper::FormatClass(bot, AiFactory::GetPlayerSpecTab(bot)))),
-        fmt::arg("bot_faction", bot->GetTeamId() == TEAM_ALLIANCE ? "Alliance" : "Horde"),
+        fmt::arg("bot_faction", Words_Faction(bot->GetTeamId())),
         fmt::arg("bot_area", area ? PlayerbotAI::GetLocalizedAreaName(area) : "UnknownArea"),
         fmt::arg("bot_zone", zone ? PlayerbotAI::GetLocalizedAreaName(zone) : "UnknownZone"),
         fmt::arg("bot_map", OllamaContinentName(bot)),

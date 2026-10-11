@@ -198,6 +198,63 @@ OllamaChat.ReasoningTokenReserve = 512
 #     Default:     (empty)
 OllamaChat.ReasoningEffort = ""
 
+# Prompt words can be customized for the language used by your realm.
+# OllamaChat.Words.Male
+#     Description: Word used for a male character in prompt descriptions.
+#     Example:     OllamaChat.Words.Male = hombre
+#     Default:     Male
+OllamaChat.Words.Male = "Male"
+
+# OllamaChat.Words.Female
+#     Description: Word used for a female character in prompt descriptions.
+#     Example:     OllamaChat.Words.Female = mujer
+#     Default:     Female
+OllamaChat.Words.Female = "Female"
+
+# OllamaChat.Words.Alliance
+#     Description: Faction name used for Alliance characters in prompts.
+#     Example:     OllamaChat.Words.Alliance = Alianza
+#     Default:     Alliance
+OllamaChat.Words.Alliance = "Alliance"
+
+# OllamaChat.Words.Horde
+#     Description: Faction name used for Horde characters in prompts.
+#     Example:     OllamaChat.Words.Horde = Horda
+#     Default:     Horde
+OllamaChat.Words.Horde = "Horde"
+
+# OllamaChat.Words.InGroup
+#     Description: Status word used when a character is in a group.
+#     Example:     OllamaChat.Words.InGroup = en grupo
+#     Default:     In a group
+OllamaChat.Words.InGroup = "In a group"
+
+# OllamaChat.Words.Solo
+#     Description: Status word used when a character is not in a group.
+#     Example:     OllamaChat.Words.Solo = solo
+#     Default:     Solo
+OllamaChat.Words.Solo = "Solo"
+
+# OllamaChat.Words.NoGuild
+#     Description: Text used when a character has no guild.
+#     Example:     OllamaChat.Words.NoGuild = sin hermandad
+#     Default:     No Guild
+OllamaChat.Words.NoGuild = "No Guild"
+
+# OllamaChat.Words.ThePlayer
+#     Description: Fallback name used for a player missing from chat history.
+#     Example:     OllamaChat.Words.ThePlayer = el jugador
+#     Default:     The player
+OllamaChat.Words.ThePlayer = "The player"
+
+# OllamaChat.PromptLocale
+#     Description: Locale used for class and race names in prompts. Empty keeps
+#                  the existing playerbots ChatHelper names; missing DBC locale
+#                  names fall back to English.
+#     Example:     OllamaChat.PromptLocale = esES
+#     Default:     (empty)
+OllamaChat.PromptLocale = ""
+
 # OllamaChat.Temperature
 #     Description: Controls the "creativity" or randomness of the model’s output.
 #                  Lower values (e.g., 0.2) = more focused, repetitive, and predictable.

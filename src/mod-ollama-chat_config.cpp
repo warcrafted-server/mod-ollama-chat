@@ -11,6 +11,7 @@
 #include "mod-ollama-chat_memory.h"
 #include "mod-ollama-chat_roleplay.h"
 #include "mod-ollama-chat_topics.h"
+#include "mod-ollama-chat_words.h"
 #include "mod-ollama-chat-utilities.h"
 #include <fmt/core.h>
 #include <sstream>
@@ -621,6 +622,17 @@ void LoadOllamaChatConfig()
     g_OllamaSystemPrompt              = sConfigMgr->GetOption<std::string>("OllamaChat.SystemPrompt", "");
     g_OllamaSeed                      = sConfigMgr->GetOption<std::string>("OllamaChat.Seed", "");
     g_OllamaReasoningEffort           = sConfigMgr->GetOption<std::string>("OllamaChat.ReasoningEffort", "");
+
+    Words_Configure(
+        sConfigMgr->GetOption<std::string>("OllamaChat.Words.Male", "Male"),
+        sConfigMgr->GetOption<std::string>("OllamaChat.Words.Female", "Female"),
+        sConfigMgr->GetOption<std::string>("OllamaChat.Words.Alliance", "Alliance"),
+        sConfigMgr->GetOption<std::string>("OllamaChat.Words.Horde", "Horde"),
+        sConfigMgr->GetOption<std::string>("OllamaChat.Words.InGroup", "In a group"),
+        sConfigMgr->GetOption<std::string>("OllamaChat.Words.Solo", "Solo"),
+        sConfigMgr->GetOption<std::string>("OllamaChat.Words.NoGuild", "No Guild"),
+        sConfigMgr->GetOption<std::string>("OllamaChat.Words.ThePlayer", "The player"),
+        sConfigMgr->GetOption<std::string>("OllamaChat.PromptLocale", ""));
 
     g_MaxConcurrentQueries            = sConfigMgr->GetOption<uint32_t>("OllamaChat.MaxConcurrentQueries", 0);
 
