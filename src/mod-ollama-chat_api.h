@@ -6,6 +6,13 @@
 #include "mod-ollama-chat_httpclient.h"
 #include <string>
 #include <cstdint>
+#include <vector>
+
+struct OllamaChatTurn
+{
+    bool assistant = false;
+    std::string content;
+};
 
 // Result of one generation call. The old API returned a bare string, so
 // "server unreachable", "model refused to think" and "model said nothing"
@@ -91,7 +98,8 @@ OllamaHttpHeaders OllamaBuildRequestHeaders(const OllamaEndpointSettings& cfg);
 // provider rejects the request for asking.
 //
 // Blocking. Call from a worker thread, never from the world thread.
-OllamaApiResult QueryOllama(const std::string& prompt, OllamaRequestKind kind);
+OllamaApiResult QueryOllama(const std::string& prompt, OllamaRequestKind kind,
+                            const std::vector<OllamaChatTurn>& history = {});
 
 // Legacy shim: returns the text, or empty on any failure.
 std::string QueryOllamaAPI(const std::string& prompt);

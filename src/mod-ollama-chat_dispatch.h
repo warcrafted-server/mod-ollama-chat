@@ -1,7 +1,7 @@
 #ifndef MOD_OLLAMA_CHAT_DISPATCH_H
 #define MOD_OLLAMA_CHAT_DISPATCH_H
 
-#include "mod-ollama-chat_capability.h"
+#include "mod-ollama-chat_api.h"
 #include "mod-ollama-chat_handler.h"
 
 #include "ObjectGuid.h"
@@ -75,6 +75,7 @@ struct OllamaChatRequest
     // Generation.
     std::string       prompt;
     OllamaRequestKind kind = OllamaRequestKind::ChatReply;
+    std::vector<OllamaChatTurn> history;
 
     // Resolved on the world thread before submission so the worker never has
     // to touch a Player to know these.

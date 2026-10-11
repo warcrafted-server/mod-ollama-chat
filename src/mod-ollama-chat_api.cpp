@@ -68,6 +68,21 @@ namespace
         return stopSeqs;
     }
 
+    void AppendMergedMessage(nlohmann::json& messages, const std::string& role,
+                             const std::string& content)
+    {
+        if (content.empty())
+            return;
+
+        if (!messages.empty() && messages.back().at("role").get<std::string>() == role)
+        {
+            messages.back()["content"] = messages.back()["content"].get<std::string>() + "\n" + content;
+            return;
+        }
+
+        messages.push_back({ { "role", role }, { "content", content } });
+    }
+
     // ----------------------------------------------------------------------
     // Ollama native: POST /api/generate
     // ----------------------------------------------------------------------
@@ -76,6 +91,8 @@ namespace
                                       const OllamaThinkRequest& think,
                                       uint32_t reasoningReserve)
     {
+        // Ollama's generate endpoint takes a plain prompt; callers targeting
+        // Ollama include any conversation history in that prompt themselves.
         nlohmann::json request = {
             { "model",  cfg.model },
             { "prompt", SanitizeUTF8(prompt) },
@@ -164,12 +181,19 @@ namespace
                                       const std::string& prompt,
                                       OllamaRequestKind kind,
                                       const OllamaThinkRequest& think,
-                                      uint32_t reasoningReserve)
+                                      uint32_t reasoningReserve,
+                                      const std::vector<OllamaChatTurn>& history)
     {
         nlohmann::json messages = nlohmann::json::array();
         if (!cfg.systemPrompt.empty())
             messages.push_back({ { "role", "system" }, { "content", SanitizeUTF8(cfg.systemPrompt) } });
-        messages.push_back({ { "role", "user" }, { "content", SanitizeUTF8(prompt) } });
+
+        for (const OllamaChatTurn& turn : history)
+        {
+            const std::string content = SanitizeUTF8(turn.content);
+            AppendMergedMessage(messages, turn.assistant ? "assistant" : "user", content);
+        }
+        AppendMergedMessage(messages, "user", SanitizeUTF8(prompt));
 
         nlohmann::json request = {
             { "model",    cfg.model },
@@ -234,7 +258,8 @@ namespace
     nlohmann::json BuildAnthropicRequest(const OllamaEndpointSettings& cfg,
                                          const std::string& prompt,
                                          const OllamaThinkRequest& think,
-                                         uint32_t reasoningReserve)
+                                         uint32_t reasoningReserve,
+                                         const std::vector<OllamaChatTurn>& history)
     {
         constexpr uint32_t kDefaultMaxTokens  = 1024;
         constexpr uint32_t kMinThinkingBudget = 1024;
@@ -248,11 +273,25 @@ namespace
             maxTokens += budget;   // max_tokens must exceed budget_tokens
         }
 
+        nlohmann::json messages = nlohmann::json::array();
+        bool hasUserTurn = false;
+        for (const OllamaChatTurn& turn : history)
+        {
+            const std::string role = turn.assistant ? "assistant" : "user";
+            const std::string content = SanitizeUTF8(turn.content);
+            if (content.empty() || (!hasUserTurn && role == "assistant"))
+                continue;
+
+            AppendMergedMessage(messages, role, content);
+            if (role == "user")
+                hasUserTurn = true;
+        }
+        AppendMergedMessage(messages, "user", SanitizeUTF8(prompt));
+
         nlohmann::json request = {
             { "model",      cfg.model },
             { "max_tokens", maxTokens },
-            { "messages",   nlohmann::json::array({
-                  { { "role", "user" }, { "content", SanitizeUTF8(prompt) } } }) },
+            { "messages",   std::move(messages) },
             { "stream",     false },
         };
 
@@ -284,12 +323,13 @@ namespace
                                 const std::string& prompt,
                                 OllamaRequestKind kind,
                                 const OllamaThinkRequest& think,
-                                uint32_t reasoningReserve)
+                                uint32_t reasoningReserve,
+                                const std::vector<OllamaChatTurn>& history)
     {
         switch (cfg.provider)
         {
-            case OllamaProvider::OpenAI:    return BuildOpenAIRequest(cfg, prompt, kind, think, reasoningReserve);
-            case OllamaProvider::Anthropic: return BuildAnthropicRequest(cfg, prompt, think, reasoningReserve);
+            case OllamaProvider::OpenAI:    return BuildOpenAIRequest(cfg, prompt, kind, think, reasoningReserve, history);
+            case OllamaProvider::Anthropic: return BuildAnthropicRequest(cfg, prompt, think, reasoningReserve, history);
             default:                        return BuildOllamaRequest(cfg, prompt, think, reasoningReserve);
         }
     }
@@ -510,7 +550,8 @@ namespace
                                 const std::string& prompt,
                                 OllamaRequestKind kind,
                                 const OllamaThinkRequest& think,
-                                uint32_t reasoningReserve)
+                                uint32_t reasoningReserve,
+                                const std::vector<OllamaChatTurn>& history)
     {
         OllamaApiResult result;
 
@@ -518,7 +559,7 @@ namespace
         // model does on its own is not something backing think off can fix.
         result.thinkUsed = think.wanted;
 
-        const nlohmann::json request = BuildRequest(cfg, prompt, kind, think, reasoningReserve);
+        const nlohmann::json request = BuildRequest(cfg, prompt, kind, think, reasoningReserve, history);
 
         const auto started = std::chrono::steady_clock::now();
         OllamaHttpResult http = t_httpClient.PostEx(cfg.url, request.dump(), 0,
@@ -656,7 +697,8 @@ OllamaHttpHeaders OllamaBuildRequestHeaders(const OllamaEndpointSettings& cfg)
     return headers;
 }
 
-OllamaApiResult QueryOllama(const std::string& prompt, OllamaRequestKind kind)
+OllamaApiResult QueryOllama(const std::string& prompt, OllamaRequestKind kind,
+                            const std::vector<OllamaChatTurn>& history)
 {
     OllamaApiResult result;
 
@@ -685,7 +727,7 @@ OllamaApiResult QueryOllama(const std::string& prompt, OllamaRequestKind kind)
     // for: a throttled provider slows replies down instead of losing them.
     auto performWithBackoff = [&](OllamaThinkRequest& req, uint32_t budget)
     {
-        OllamaApiResult r = PerformOnce(cfg, prompt, kind, req, budget);
+        OllamaApiResult r = PerformOnce(cfg, prompt, kind, req, budget, history);
 
         for (uint32_t attempt = 0;
              attempt < g_RateLimitRetries && !r.ok && IsRateLimited(r.status);
@@ -710,7 +752,7 @@ OllamaApiResult QueryOllama(const std::string& prompt, OllamaRequestKind kind)
                          r.status, attempt + 1, g_RateLimitRetries, wait);
 
             std::this_thread::sleep_for(std::chrono::seconds(wait));
-            r = PerformOnce(cfg, prompt, kind, req, budget);
+            r = PerformOnce(cfg, prompt, kind, req, budget, history);
         }
 
         return r;
@@ -734,7 +776,7 @@ OllamaApiResult QueryOllama(const std::string& prompt, OllamaRequestKind kind)
                     LOG_INFO("module.ollamachat",
                              "[Ollama Chat] Model '{}' wants max_completion_tokens instead of "
                              "max_tokens; switching for the rest of this session.", cfg.model);
-                r = PerformOnce(cfg, prompt, kind, req, budget);
+                r = PerformOnce(cfg, prompt, kind, req, budget, history);
             }
             else if (!g_samplingRejected.load() &&
                      (lower.find("unsupported") != std::string::npos ||
@@ -750,7 +792,7 @@ OllamaApiResult QueryOllama(const std::string& prompt, OllamaRequestKind kind)
                              "[Ollama Chat] Model '{}' rejects explicit sampling parameters "
                              "(temperature/top_p/penalties); sending its defaults for the rest "
                              "of this session.", cfg.model);
-                r = PerformOnce(cfg, prompt, kind, req, budget);
+                r = PerformOnce(cfg, prompt, kind, req, budget, history);
             }
         }
 
@@ -761,7 +803,7 @@ OllamaApiResult QueryOllama(const std::string& prompt, OllamaRequestKind kind)
         {
             OllamaCapability_NoteEffortLevelRejected();
             req.level.clear();
-            r = PerformOnce(cfg, prompt, kind, req, budget);
+            r = PerformOnce(cfg, prompt, kind, req, budget, history);
         }
 
         return r;
@@ -776,7 +818,7 @@ OllamaApiResult QueryOllama(const std::string& prompt, OllamaRequestKind kind)
     {
         OllamaCapability_NoteThinkRejected();
         think  = OllamaThinkRequest{};
-        result = PerformOnce(cfg, prompt, kind, think, 0);
+        result = PerformOnce(cfg, prompt, kind, think, 0, history);
     }
 
     // Self-heal: HTTP 200, answer empty, and reasoning text or provider

@@ -100,7 +100,8 @@ namespace
 
     void RunChatTask(const Task& task)
     {
-        OllamaApiResult api = QueryOllama(task.request.prompt, task.request.kind);
+        OllamaApiResult api = QueryOllama(task.request.prompt, task.request.kind,
+                                          task.request.history);
 
         if (!api.ok)
         {
