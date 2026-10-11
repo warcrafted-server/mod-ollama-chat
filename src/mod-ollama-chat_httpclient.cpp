@@ -56,7 +56,6 @@ namespace
     httplib::Headers BuildHeaders(const std::string& host, const OllamaHttpHeaders& extra)
     {
         httplib::Headers headers = {
-            { "Content-Type", "application/json" },
             { "User-Agent",   "AzerothCore-OllamaChat/2.0" },
             { "Accept",       "application/json" },
         };
